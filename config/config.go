@@ -17,9 +17,6 @@ type Conf struct {
 }
 
 func (c *Conf) Valid() bool {
-	if c == nil {
-		return false
-	}
 
 	if c.ApiKey == "" {
 		return false

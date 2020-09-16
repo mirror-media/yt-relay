@@ -52,7 +52,7 @@ type VideoList struct {
 	VideoResources []VideoResource `json:"items"`
 }
 
-type YTRelay interface {
+type VideoRelay interface {
 	Search(keyword string) (VideoList, error)
 	ListByVideoID(videoID string) (interface{}, error)
 	ListPlaylistVideos(playlist string, nextPageToken string) (interface{}, error)

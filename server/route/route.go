@@ -5,6 +5,6 @@ import (
 	ytrelay "github.com/mirror-media/yt-relay"
 )
 
-func Set(engine *gin.Engine, relay ytrelay.YTRelay) error {
+func Set(engine *gin.Engine, relay ytrelay.VideoRelay) error {
 	return nil
 }

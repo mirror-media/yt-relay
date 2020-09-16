@@ -4,7 +4,9 @@ import (
 	"errors"
 
 	"github.com/mirror-media/yt-relay/cli"
+	"github.com/mirror-media/yt-relay/relay"
 	"github.com/mirror-media/yt-relay/server"
+	"github.com/mirror-media/yt-relay/server/route"
 )
 
 var serveFlags = []string{"address", "port", "config"}
@@ -18,6 +20,14 @@ func serveMain(args []string, c cli.Conf) error {
 	if err != nil {
 		return nil
 	}
+
+	relayService, err := relay.New(cfg.ApiKey)
+	if err != nil {
+		return err
+	}
+
+	_ = route.Set(server.Engine, relayService)
+
 	return server.Run()
 }
 

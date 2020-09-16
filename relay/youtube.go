@@ -10,6 +10,8 @@ import (
 
 type Service struct {
 	youtubeService *youtube.Service
+	ChannelIDs     []string
+	PlaylistIDs    []string
 }
 
 func New(apiKey string) (*Service, error) {

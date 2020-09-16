@@ -11,7 +11,7 @@ import (
 type Conf struct {
 	ApiKey      string `yaml:"apiKey"`
 	Address     string
-	ChannelID   string   `yaml:"channelID"`
+	ChannelIDs  []string `yaml:"channelIDs"`
 	PlaylistIDs []string `yaml:"playlistIDs"`
 	Port        int
 }
@@ -22,9 +22,14 @@ func (c *Conf) Valid() bool {
 		return false
 	}
 
-	if c.ChannelID == "" {
+	if c.ChannelIDs == nil || len(c.ChannelIDs) == 0 {
 		return false
 	}
+
+	if c.PlaylistIDs == nil || len(c.PlaylistIDs) == 0 {
+		return false
+	}
+
 	return true
 }
 

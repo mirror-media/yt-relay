@@ -54,7 +54,7 @@ type VideoList struct {
 
 type VideoRelay interface {
 	Search(keyword string) (VideoList, error)
-	ListByVideoID(videoID string) (interface{}, error)
+	ListByVideoIDs(videoIDs []string) (interface{}, error)
 	ListPlaylistVideos(playlist string, nextPageToken string) (interface{}, error)
 	ListChannelVideos(channel string, nextPageToken string) (interface{}, error)
 }

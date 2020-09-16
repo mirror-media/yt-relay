@@ -24,7 +24,7 @@ func New(apiKey string) (*Service, error) {
 func (s *Service) Search(keyword string) (ytrelay.VideoList, error) {
 	return ytrelay.VideoList{}, nil
 }
-func (s *Service) ListByVideoID(videoID string) (interface{}, error) {
+func (s *Service) ListByVideoIDs(videoID []string) (interface{}, error) {
 	return nil, nil
 }
 func (s *Service) ListPlaylistVideos(playlist string, nextPageToken string) (interface{}, error) {

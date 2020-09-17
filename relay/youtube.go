@@ -21,15 +21,14 @@ func New(apiKey string) (*Service, error) {
 	}, err
 }
 
-func (s *Service) Search(keyword string) (ytrelay.VideoList, error) {
-	return ytrelay.VideoList{}, nil
-}
-func (s *Service) ListByVideoIDs(videoID []string) (interface{}, error) {
+func (s *Service) Search(keyword string, options ytrelay.Options) (interface{}, error) {
 	return nil, nil
 }
-func (s *Service) ListPlaylistVideos(playlist string, nextPageToken string) (interface{}, error) {
+
+func (s *Service) ListByVideoIDs(videoIDs []string, options ytrelay.Options) (interface{}, error) {
 	return nil, nil
 }
-func (s *Service) ListChannelVideos(channel string, nextPageToken string) (interface{}, error) {
+
+func (s *Service) ListPlaylistVideos(playlistID string, options ytrelay.Options) (interface{}, error) {
 	return nil, nil
 }

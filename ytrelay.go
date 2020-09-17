@@ -52,9 +52,22 @@ type VideoList struct {
 	VideoResources []VideoResource `json:"items"`
 }
 
+type Options struct {
+	ChannelID  string `form:"channelId"`  // For YouTube
+	ID         string `form:"id"`         // For YouTube
+	MaxResults uint   `form:"maxResults"` // For YouTube
+	PageToken  string `form:"pageToken"`  // For YouTube
+	// NextPageToken string `form:"nextPageToken"` // For YouTube
+	// PrevPageToken string `form:"prevPageToken"` // For YouTube
+	Part       string `form:"part"`       // For YouTube
+	SafeSearch string `form:"safeSearch"` // For YouTube
+	Type       string `form:"type"`
+	Order      string `form:"order"` // For YouTube
+	Query      string `form:"q"`     // For YouTube
+}
+
 type VideoRelay interface {
-	Search(keyword string) (VideoList, error)
-	ListByVideoIDs(videoIDs []string) (interface{}, error)
-	ListPlaylistVideos(playlist string, nextPageToken string) (interface{}, error)
-	ListChannelVideos(channel string, nextPageToken string) (interface{}, error)
+	Search(keyword string, options Options) (interface{}, error)
+	ListByVideoIDs(videoIDs []string, options Options) (interface{}, error)
+	ListPlaylistVideos(playlistID string, options Options) (interface{}, error)
 }

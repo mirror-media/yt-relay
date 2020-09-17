@@ -47,14 +47,14 @@ func Set(r *gin.Engine, relayService ytrelay.VideoRelay, whitelist ytrelay.APIWh
 		if !whitelist.ValidateChannelID(queries) {
 			err = fmt.Errorf("channelId(%s) is invalid", queries.ChannelID)
 			apiLogger.Error(err)
-			c.AbortWithStatusJSON(http.StatusBadRequest, api.ErrorResp{Error: ErrorEmptyID})
+			c.AbortWithStatusJSON(http.StatusBadRequest, api.ErrorResp{Error: err.Error()})
 			return
 		}
 
 		resp, err := relayService.Search(queries)
 		if err != nil {
 			apiLogger.Error(err)
-			c.AbortWithStatusJSON(http.StatusInternalServerError, api.ErrorResp{Error: ErrorEmptyID})
+			c.AbortWithStatusJSON(http.StatusInternalServerError, api.ErrorResp{Error: err.Error()})
 			return
 		}
 		c.JSON(http.StatusOK, resp)
@@ -90,7 +90,7 @@ func Set(r *gin.Engine, relayService ytrelay.VideoRelay, whitelist ytrelay.APIWh
 		resp, err := relayService.ListByVideoIDs(queries)
 		if err != nil {
 			apiLogger.Error(err)
-			c.AbortWithStatusJSON(http.StatusInternalServerError, api.ErrorResp{Error: ErrorEmptyID})
+			c.AbortWithStatusJSON(http.StatusInternalServerError, api.ErrorResp{Error: err.Error()})
 			return
 		}
 
@@ -140,7 +140,7 @@ func Set(r *gin.Engine, relayService ytrelay.VideoRelay, whitelist ytrelay.APIWh
 		resp, err := relayService.ListByVideoIDs(queries)
 		if err != nil {
 			apiLogger.Error(err)
-			c.AbortWithStatusJSON(http.StatusInternalServerError, api.ErrorResp{Error: ErrorEmptyID})
+			c.AbortWithStatusJSON(http.StatusInternalServerError, api.ErrorResp{Error: err.Error()})
 			return
 		}
 

@@ -17,9 +17,8 @@ type Conf struct {
 
 // Whitelist are maps, key is the whitelist string, value determines if it should be effective
 type Whitelists struct {
-	ChannelIDs    map[string]bool `yaml:"channelIDs"`
-	PlaylistIDs   map[string]bool `yaml:"playlistIDs"`
-	APIParameters map[string]bool `yaml:"apiParameters"`
+	ChannelIDs  map[string]bool `yaml:"channelIDs"`
+	PlaylistIDs map[string]bool `yaml:"playlistIDs"`
 }
 
 func (c *Conf) Valid() bool {
@@ -32,7 +31,7 @@ func (c *Conf) Valid() bool {
 		return false
 	}
 
-	if len(c.Whitelists.APIParameters) == 0 {
+	if len(c.Whitelists.PlaylistIDs) == 0 {
 		return false
 	}
 

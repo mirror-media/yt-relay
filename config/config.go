@@ -9,11 +9,17 @@ import (
 )
 
 type Conf struct {
-	ApiKey      string `yaml:"apiKey"`
-	Address     string
-	ChannelIDs  []string `yaml:"channelIDs"`
-	PlaylistIDs []string `yaml:"playlistIDs"`
-	Port        int
+	Address    string
+	ApiKey     string `yaml:"apiKey"`
+	Port       int
+	Whitelists Whitelists `yaml:"whitelists"`
+}
+
+// Whitelist are maps, key is the whitelist string, value determines if it should be effective
+type Whitelists struct {
+	ChannelIDs    map[string]bool `yaml:"channelIDs"`
+	PlaylistIDs   map[string]bool `yaml:"playlistIDs"`
+	APIParameters map[string]bool `yaml:"apiParameters"`
 }
 
 func (c *Conf) Valid() bool {
@@ -22,11 +28,11 @@ func (c *Conf) Valid() bool {
 		return false
 	}
 
-	if c.ChannelIDs == nil || len(c.ChannelIDs) == 0 {
+	if len(c.Whitelists.ChannelIDs) == 0 {
 		return false
 	}
 
-	if c.PlaylistIDs == nil || len(c.PlaylistIDs) == 0 {
+	if len(c.Whitelists.APIParameters) == 0 {
 		return false
 	}
 

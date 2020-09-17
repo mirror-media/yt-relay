@@ -71,3 +71,9 @@ type VideoRelay interface {
 	ListByVideoIDs(videoIDs []string, options Options) (interface{}, error)
 	ListPlaylistVideos(playlistID string, options Options) (interface{}, error)
 }
+
+type APIWhitelist interface {
+	ValidateParameters(params []string) bool
+	ValidateChannelID(channelID string) bool
+	ValidatePlaylistID(playlistID string) bool
+}

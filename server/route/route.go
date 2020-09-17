@@ -46,21 +46,22 @@ func Set(r *gin.Engine, relayService ytrelay.VideoRelay, whitelist ytrelay.APIWh
 		// Check the mandatory parameters
 		if queries.Part == "" {
 			apiLogger.Error(ErrorEmptyPart)
-			_ = c.AbortWithError(http.StatusBadRequest, fmt.Errorf("%s", ErrorEmptyPart))
+			c.AbortWithStatusJSON(http.StatusBadRequest, api.ErrorResp{Error: ErrorEmptyPart})
 			return
 		}
 
 		// Check whitelist
 		if !whitelist.ValidateChannelID(queries) {
-			apiLogger.Error(fmt.Sprintf("channelId(%s) is invalid", queries.ChannelID))
-			_ = c.AbortWithError(http.StatusBadRequest, err)
+			err = fmt.Errorf("channelId(%s) is invalid", queries.ChannelID)
+			apiLogger.Error(err)
+			c.AbortWithStatusJSON(http.StatusBadRequest, api.ErrorResp{Error: ErrorEmptyID})
 			return
 		}
 
 		resp, err := relayService.Search(queries)
 		if err != nil {
 			apiLogger.Error(err)
-			_ = c.AbortWithError(http.StatusInternalServerError, err)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, api.ErrorResp{Error: ErrorEmptyID})
 			return
 		}
 		c.JSON(http.StatusOK, resp)
@@ -84,12 +85,12 @@ func Set(r *gin.Engine, relayService ytrelay.VideoRelay, whitelist ytrelay.APIWh
 		// Check the mandatory parameters
 		if queries.Part == "" {
 			apiLogger.Error(ErrorEmptyPart)
-			_ = c.AbortWithError(http.StatusBadRequest, fmt.Errorf("%s", ErrorEmptyPart))
+			c.AbortWithStatusJSON(http.StatusBadRequest, api.ErrorResp{Error: ErrorEmptyPart})
 			return
 		}
 		if queries.IDs == "" {
 			apiLogger.Error(ErrorEmptyID)
-			_ = c.AbortWithError(http.StatusBadRequest, fmt.Errorf("%s", ErrorEmptyID))
+			c.AbortWithStatusJSON(http.StatusBadRequest, api.ErrorResp{Error: ErrorEmptyID})
 			return
 		}
 
@@ -131,13 +132,14 @@ func Set(r *gin.Engine, relayService ytrelay.VideoRelay, whitelist ytrelay.APIWh
 		// Check the mandatory parameters
 		if queries.Part == "" {
 			apiLogger.Error(ErrorEmptyPart)
-			_ = c.AbortWithError(http.StatusBadRequest, fmt.Errorf("%s", ErrorEmptyPart))
+			c.AbortWithStatusJSON(http.StatusBadRequest, api.ErrorResp{Error: ErrorEmptyPart})
 			return
 		}
 
 		// Check whitelist
 		if !whitelist.ValidatePlaylistIDs(queries) {
-			apiLogger.Error(fmt.Sprintf("channelId(%s) is invalid", queries.ChannelID))
+			err = fmt.Errorf("playlist(%s) or id(%s) is invalid", queries.PlaylistID, queries.IDs)
+			apiLogger.Error(err)
 			_ = c.AbortWithError(http.StatusBadRequest, err)
 			return
 		}
@@ -145,7 +147,7 @@ func Set(r *gin.Engine, relayService ytrelay.VideoRelay, whitelist ytrelay.APIWh
 		resp, err := relayService.ListByVideoIDs(queries)
 		if err != nil {
 			apiLogger.Error(err)
-			_ = c.AbortWithError(http.StatusInternalServerError, err)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, api.ErrorResp{Error: ErrorEmptyID})
 			return
 		}
 

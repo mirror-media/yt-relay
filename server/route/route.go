@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	jsoniter "github.com/json-iterator/go"
 	ytrelay "github.com/mirror-media/yt-relay"
 	"github.com/mirror-media/yt-relay/api"
 	"github.com/mirror-media/yt-relay/relay"
@@ -18,12 +17,6 @@ const (
 	ErrorEmptyPart = "part cannot be empty"
 	ErrorEmptyID   = "id cannot be empty"
 )
-
-var json jsoniter.API
-
-func init() {
-	json = jsoniter.ConfigFastest
-}
 
 func Set(r *gin.Engine, relayService ytrelay.VideoRelay, whitelist ytrelay.APIWhitelist) error {
 

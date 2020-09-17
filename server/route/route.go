@@ -7,7 +7,11 @@ import (
 	"github.com/gin-gonic/gin"
 	jsoniter "github.com/json-iterator/go"
 	ytrelay "github.com/mirror-media/yt-relay"
+	"github.com/mirror-media/yt-relay/api"
+	"github.com/mirror-media/yt-relay/relay"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/api/youtube/v3"
 )
 
 const (
@@ -21,7 +25,7 @@ func init() {
 	json = jsoniter.ConfigFastest
 }
 
-func Set(r *gin.Engine, relay ytrelay.VideoRelay, whitelist ytrelay.APIWhitelist) error {
+func Set(r *gin.Engine, relayService ytrelay.VideoRelay, whitelist ytrelay.APIWhitelist) error {
 
 	ytRouter := r.Group("/youtube/v3")
 
@@ -53,7 +57,7 @@ func Set(r *gin.Engine, relay ytrelay.VideoRelay, whitelist ytrelay.APIWhitelist
 			return
 		}
 
-		resp, err := relay.Search(queries)
+		resp, err := relayService.Search(queries)
 		if err != nil {
 			apiLogger.Error(err)
 			_ = c.AbortWithError(http.StatusInternalServerError, err)
@@ -89,14 +93,24 @@ func Set(r *gin.Engine, relay ytrelay.VideoRelay, whitelist ytrelay.APIWhitelist
 			return
 		}
 
-		resp, err := relay.ListByVideoIDs(queries)
+		resp, err := relayService.ListByVideoIDs(queries)
 		if err != nil {
 			apiLogger.Error(err)
-			_ = c.AbortWithError(http.StatusInternalServerError, err)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, api.ErrorResp{Error: ErrorEmptyID})
 			return
 		}
 
-		// TODO verify channel id after implement relay service
+		// verify channel id for YouTube
+		_, isYouTube := relayService.(*relay.YouTubeServiceV3)
+		if isYouTube {
+			if err = validateYouTubeVideoListResponse(whitelist, resp); err != nil {
+				err = errors.Wrap(err, "some video's channel id is invalid")
+				apiLogger.Error(err)
+				c.AbortWithStatusJSON(http.StatusBadRequest, api.ErrorResp{Error: err.Error()})
+				return
+			}
+		}
+
 		c.JSON(http.StatusOK, resp)
 	})
 
@@ -128,7 +142,7 @@ func Set(r *gin.Engine, relay ytrelay.VideoRelay, whitelist ytrelay.APIWhitelist
 			return
 		}
 
-		resp, err := relay.ListByVideoIDs(queries)
+		resp, err := relayService.ListByVideoIDs(queries)
 		if err != nil {
 			apiLogger.Error(err)
 			_ = c.AbortWithError(http.StatusInternalServerError, err)
@@ -146,4 +160,14 @@ func parseQueries(c *gin.Context) (ytrelay.Options, error) {
 	err := c.BindQuery(&queries)
 
 	return queries, err
+}
+
+func validateYouTubeVideoListResponse(whitelist ytrelay.APIWhitelist, resp interface{}) (err error) {
+	for _, item := range resp.(*youtube.VideoListResponse).Items {
+		if !whitelist.ValidateChannelID(ytrelay.Options{ChannelID: item.Snippet.ChannelId}) {
+			err = fmt.Errorf("channelId(%s) is invalid", item.Snippet.ChannelId)
+			return err
+		}
+	}
+	return nil
 }

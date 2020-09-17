@@ -7,7 +7,7 @@ import (
 	"github.com/mirror-media/yt-relay/config"
 )
 
-type API struct {
+type YouTubeAPI struct {
 	Whitelist config.Whitelists
 }
 
@@ -20,14 +20,14 @@ type API struct {
 // 	return true
 // }
 
-func (api API) ValidateChannelID(options ytrelay.Options) bool {
+func (api YouTubeAPI) ValidateChannelID(options ytrelay.Options) bool {
 	if effective, present := api.Whitelist.ChannelIDs[options.ChannelID]; present && effective {
 		return true
 	}
 	return false
 }
 
-func (api API) ValidatePlaylistIDs(options ytrelay.Options) bool {
+func (api YouTubeAPI) ValidatePlaylistIDs(options ytrelay.Options) bool {
 	ids := make([]string, 1)
 	if options.PlaylistID != "" {
 		ids = append(ids, options.PlaylistID)

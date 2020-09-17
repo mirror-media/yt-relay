@@ -31,7 +31,7 @@ func New(c config.Conf) (*Server, error) {
 	engine := gin.Default()
 
 	s := &Server{
-		APIWhitelist: &whitelist.API{
+		APIWhitelist: &whitelist.YouTubeAPI{
 			Whitelist: c.Whitelists,
 		},
 		conf:   &c,

@@ -70,13 +70,10 @@ func (s *YouTubeServiceV3) ListByVideoIDs(options ytrelay.Options) (resp interfa
 	return call.Do()
 }
 
-// ListPlaylistVideos supports the following parameters: part, id, playlistId, maxResults, pageToken
+// ListPlaylistVideos supports the following parameters: part, playlistId, maxResults, pageToken
 func (s *YouTubeServiceV3) ListPlaylistVideos(options ytrelay.Options) (resp interface{}, err error) {
 	yt := s.youtubeService
 	call := yt.PlaylistItems.List(strings.Split(options.Part, ","))
-	if !isZero(options.IDs) {
-		call.Id(strings.Split(options.IDs, ",")...)
-	}
 	if !isZero(options.PlaylistID) {
 		call.PlaylistId(options.PlaylistID)
 	}

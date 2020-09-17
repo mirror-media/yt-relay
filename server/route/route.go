@@ -137,7 +137,7 @@ func Set(r *gin.Engine, relayService ytrelay.VideoRelay, whitelist ytrelay.APIWh
 			return
 		}
 
-		resp, err := relayService.ListByVideoIDs(queries)
+		resp, err := relayService.ListPlaylistVideos(queries)
 		if err != nil {
 			apiLogger.Error(err)
 			c.AbortWithStatusJSON(http.StatusInternalServerError, api.ErrorResp{Error: err.Error()})

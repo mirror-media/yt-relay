@@ -55,7 +55,7 @@ type VideoList struct {
 type Options struct {
 	ChannelID  string `form:"channelId"`  // For YouTube
 	IDs        string `form:"id"`         // For YouTube
-	MaxResults uint   `form:"maxResults"` // For YouTube
+	MaxResults int64  `form:"maxResults"` // For YouTube
 	PageToken  string `form:"pageToken"`  // For YouTube
 	Part       string `form:"part"`       // For YouTube
 	PlaylistID string `form:"playlistId"` // For YouTube
@@ -66,9 +66,9 @@ type Options struct {
 }
 
 type VideoRelay interface {
-	Search(options Options) (code int, resp interface{}, err error)
-	ListByVideoIDs(options Options) (code int, resp interface{}, err error)
-	ListPlaylistVideos(options Options) (code int, resp interface{}, err error)
+	Search(options Options) (resp interface{}, err error)
+	ListByVideoIDs(options Options) (resp interface{}, err error)
+	ListPlaylistVideos(options Options) (resp interface{}, err error)
 }
 
 type APIWhitelist interface {

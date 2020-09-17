@@ -53,12 +53,7 @@ func Set(r *gin.Engine, relay ytrelay.VideoRelay, whitelist ytrelay.APIWhitelist
 			return
 		}
 
-		code, resp, err := relay.Search(queries)
-		if code != http.StatusOK {
-			apiLogger.Errorf("relay service return code %d", code)
-			_ = c.AbortWithError(code, err)
-			return
-		}
+		resp, err := relay.Search(queries)
 		if err != nil {
 			apiLogger.Error(err)
 			_ = c.AbortWithError(http.StatusInternalServerError, err)
@@ -94,19 +89,14 @@ func Set(r *gin.Engine, relay ytrelay.VideoRelay, whitelist ytrelay.APIWhitelist
 			return
 		}
 
-		code, resp, err := relay.ListByVideoIDs(queries)
-		if code != http.StatusOK {
-			apiLogger.Errorf("relay service return code %d", code)
-			_ = c.AbortWithError(code, err)
-			return
-		}
+		resp, err := relay.ListByVideoIDs(queries)
 		if err != nil {
 			apiLogger.Error(err)
 			_ = c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
 
-		// TODO verify channel id
+		// TODO verify channel id after implement relay service
 		c.JSON(http.StatusOK, resp)
 	})
 
@@ -138,19 +128,13 @@ func Set(r *gin.Engine, relay ytrelay.VideoRelay, whitelist ytrelay.APIWhitelist
 			return
 		}
 
-		code, resp, err := relay.ListByVideoIDs(queries)
-		if code != http.StatusOK {
-			apiLogger.Errorf("relay service return code %d", code)
-			_ = c.AbortWithError(code, err)
-			return
-		}
+		resp, err := relay.ListByVideoIDs(queries)
 		if err != nil {
 			apiLogger.Error(err)
 			_ = c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
 
-		// TODO verify channel id after implement relay service
 		c.JSON(http.StatusOK, resp)
 	})
 

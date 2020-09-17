@@ -3,6 +3,8 @@ package relay
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"strings"
 
 	ytrelay "github.com/mirror-media/yt-relay"
 	"google.golang.org/api/option"
@@ -24,14 +26,41 @@ func New(apiKey string) (*ServiceV3, error) {
 	}, err
 }
 
-func (s *ServiceV3) Search(options ytrelay.Options) (code int, resp interface{}, err error) {
-	return 0, nil, nil
+// Search supports the following parameters: part, channelId, q, maxResults, pageToken, order, safeSearch
+func (s *ServiceV3) Search(options ytrelay.Options) (resp interface{}, err error) {
+	yt := s.youtubeService
+	call := yt.Search.List(strings.Split(options.Part, ","))
+	if !isZero(options.ChannelID) {
+		call.ChannelId(options.ChannelID)
+	}
+	if !isZero(options.Query) {
+		call.Q(options.Query)
+	}
+	if !isZero(options.MaxResults) {
+		call.MaxResults(options.MaxResults)
+	}
+	if !isZero(options.PageToken) {
+		call.PageToken(options.PageToken)
+	}
+	if !isZero(options.Order) {
+		call.Order(options.Order)
+	}
+	if !isZero(options.SafeSearch) {
+		call.SafeSearch(options.SafeSearch)
+	}
+
+	return call.Do()
 }
 
-func (s *ServiceV3) ListByVideoIDs(options ytrelay.Options) (code int, resp interface{}, err error) {
-	return 0, nil, nil
+func (s *ServiceV3) ListByVideoIDs(options ytrelay.Options) (resp interface{}, err error) {
+	return nil, nil
 }
 
-func (s *ServiceV3) ListPlaylistVideos(options ytrelay.Options) (code int, resp interface{}, err error) {
-	return 0, nil, nil
+func (s *ServiceV3) ListPlaylistVideos(options ytrelay.Options) (resp interface{}, err error) {
+	return nil, nil
+}
+
+func isZero(i interface{}) bool {
+	v := reflect.ValueOf(i)
+	return !v.IsValid() || reflect.DeepEqual(v.Interface(), reflect.Zero(v.Type()).Interface())
 }

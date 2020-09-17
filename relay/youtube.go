@@ -24,14 +24,14 @@ func New(apiKey string) (*ServiceV3, error) {
 	}, err
 }
 
-func (s *ServiceV3) Search(keyword string, options ytrelay.Options) (interface{}, error) {
-	return nil, nil
+func (s *ServiceV3) Search(options ytrelay.Options) (code int, resp interface{}, err error) {
+	return 0, nil, nil
 }
 
-func (s *ServiceV3) ListByVideoIDs(videoIDs []string, options ytrelay.Options) (interface{}, error) {
-	return nil, nil
+func (s *ServiceV3) ListByVideoIDs(options ytrelay.Options) (code int, resp interface{}, err error) {
+	return 0, nil, nil
 }
 
-func (s *ServiceV3) ListPlaylistVideos(playlistID string, options ytrelay.Options) (interface{}, error) {
-	return nil, nil
+func (s *ServiceV3) ListPlaylistVideos(options ytrelay.Options) (code int, resp interface{}, err error) {
+	return 0, nil, nil
 }

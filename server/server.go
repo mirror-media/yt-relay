@@ -15,11 +15,11 @@ type Server struct {
 	APIWhitelist ytrelay.APIWhitelist
 	conf         *config.Conf
 	Engine       *gin.Engine
-	Log          *log.Logger
 }
 
 func init() {
 	log.SetFormatter(&log.JSONFormatter{})
+	log.SetReportCaller(true)
 }
 
 func (s *Server) Run() error {
@@ -36,7 +36,6 @@ func New(c config.Conf) (*Server, error) {
 		},
 		conf:   &c,
 		Engine: engine,
-		Log:    log.New(),
 	}
 	return s, nil
 }

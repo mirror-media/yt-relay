@@ -26,7 +26,7 @@ func serveMain(args []string, c cli.Conf) error {
 		return err
 	}
 
-	_ = route.Set(server.Engine, relayService)
+	_ = route.Set(server.Engine, relayService, server.APIWhitelist)
 
 	return server.Run()
 }

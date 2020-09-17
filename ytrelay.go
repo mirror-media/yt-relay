@@ -54,26 +54,25 @@ type VideoList struct {
 
 type Options struct {
 	ChannelID  string `form:"channelId"`  // For YouTube
-	ID         string `form:"id"`         // For YouTube
+	IDs        string `form:"id"`         // For YouTube
 	MaxResults uint   `form:"maxResults"` // For YouTube
 	PageToken  string `form:"pageToken"`  // For YouTube
-	// NextPageToken string `form:"nextPageToken"` // For YouTube
-	// PrevPageToken string `form:"prevPageToken"` // For YouTube
 	Part       string `form:"part"`       // For YouTube
+	PlaylistID string `form:"playlistId"` // For YouTube
 	SafeSearch string `form:"safeSearch"` // For YouTube
-	Type       string `form:"type"`
-	Order      string `form:"order"` // For YouTube
-	Query      string `form:"q"`     // For YouTube
+	Type       string `form:"type"`       // For YouTube
+	Order      string `form:"order"`      // For YouTube
+	Query      string `form:"q"`          // For YouTube
 }
 
 type VideoRelay interface {
-	Search(keyword string, options Options) (interface{}, error)
-	ListByVideoIDs(videoIDs []string, options Options) (interface{}, error)
-	ListPlaylistVideos(playlistID string, options Options) (interface{}, error)
+	Search(options Options) (code int, resp interface{}, err error)
+	ListByVideoIDs(options Options) (code int, resp interface{}, err error)
+	ListPlaylistVideos(options Options) (code int, resp interface{}, err error)
 }
 
 type APIWhitelist interface {
-	ValidateParameters(params []string) bool
-	ValidateChannelID(channelID string) bool
-	ValidatePlaylistID(playlistID string) bool
+	// ValidateParameters(options Options) bool
+	ValidateChannelID(options Options) bool
+	ValidatePlaylistIDs(options Options) bool
 }

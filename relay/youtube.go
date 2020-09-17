@@ -56,8 +56,23 @@ func (s *ServiceV3) ListByVideoIDs(options ytrelay.Options) (resp interface{}, e
 	return nil, nil
 }
 
+// ListPlaylistVideos supports the following parameters: part, id, playlistId, maxResults, pageToken
 func (s *ServiceV3) ListPlaylistVideos(options ytrelay.Options) (resp interface{}, err error) {
-	return nil, nil
+	yt := s.youtubeService
+	call := yt.PlaylistItems.List(strings.Split(options.Part, ","))
+	if !isZero(options.IDs) {
+		call.Id(strings.Split(options.IDs, ",")...)
+	}
+	if !isZero(options.PlaylistID) {
+		call.PlaylistId(options.PlaylistID)
+	}
+	if !isZero(options.PageToken) {
+		call.PageToken(options.PageToken)
+	}
+	if !isZero(options.MaxResults) {
+		call.MaxResults(options.MaxResults)
+	}
+	return call.Do()
 }
 
 func isZero(i interface{}) bool {

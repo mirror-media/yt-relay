@@ -73,6 +73,6 @@ type VideoRelay interface {
 
 type APIWhitelist interface {
 	// ValidateParameters(options Options) bool
-	ValidateChannelID(options Options) bool
-	ValidatePlaylistIDs(options Options) bool
+	ValidateChannelID(channelID string) bool
+	ValidatePlaylistIDs(playlistID string) bool
 }

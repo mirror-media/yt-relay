@@ -18,6 +18,8 @@ const (
 	ErrorEmptyID   = "id cannot be empty"
 )
 
+// Set sets the routing for the gin engine
+// TODO move whitelist to YouTube relay service
 func Set(r *gin.Engine, relayService ytrelay.VideoRelay, whitelist ytrelay.APIWhitelist) error {
 
 	ytRouter := r.Group("/youtube/v3")
@@ -44,7 +46,7 @@ func Set(r *gin.Engine, relayService ytrelay.VideoRelay, whitelist ytrelay.APIWh
 		}
 
 		// Check whitelist
-		if !whitelist.ValidateChannelID(queries) {
+		if !whitelist.ValidateChannelID(queries.ChannelID) {
 			err = fmt.Errorf("channelId(%s) is invalid", queries.ChannelID)
 			apiLogger.Error(err)
 			c.AbortWithStatusJSON(http.StatusBadRequest, api.ErrorResp{Error: err.Error()})
@@ -130,8 +132,8 @@ func Set(r *gin.Engine, relayService ytrelay.VideoRelay, whitelist ytrelay.APIWh
 		}
 
 		// Check whitelist
-		if !whitelist.ValidatePlaylistIDs(queries) {
-			err = fmt.Errorf("playlist(%s) or id(%s) is invalid", queries.PlaylistID, queries.IDs)
+		if !whitelist.ValidatePlaylistIDs(queries.PlaylistID) {
+			err = fmt.Errorf("playlistId(%s) is invalid", queries.PlaylistID)
 			apiLogger.Error(err)
 			_ = c.AbortWithError(http.StatusBadRequest, err)
 			return
@@ -159,7 +161,7 @@ func parseQueries(c *gin.Context) (ytrelay.Options, error) {
 
 func validateYouTubeVideoListResponse(whitelist ytrelay.APIWhitelist, resp interface{}) (err error) {
 	for _, item := range resp.(*youtube.VideoListResponse).Items {
-		if !whitelist.ValidateChannelID(ytrelay.Options{ChannelID: item.Snippet.ChannelId}) {
+		if !whitelist.ValidateChannelID(item.Snippet.ChannelId) {
 			err = fmt.Errorf("channelId(%s) is invalid", item.Snippet.ChannelId)
 			return err
 		}

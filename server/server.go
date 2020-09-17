@@ -6,14 +6,20 @@ import (
 	ytrelay "github.com/mirror-media/yt-relay"
 	"github.com/mirror-media/yt-relay/config"
 	"github.com/mirror-media/yt-relay/whitelist"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/gin-gonic/gin"
 )
 
 type Server struct {
+	APIWhitelist ytrelay.APIWhitelist
 	conf         *config.Conf
 	Engine       *gin.Engine
-	APIWhitelist ytrelay.APIWhitelist
+	Log          *log.Logger
+}
+
+func init() {
+	log.SetFormatter(&log.JSONFormatter{})
 }
 
 func (s *Server) Run() error {
@@ -25,11 +31,12 @@ func New(c config.Conf) (*Server, error) {
 	engine := gin.Default()
 
 	s := &Server{
-		conf:   &c,
-		Engine: engine,
 		APIWhitelist: &whitelist.API{
 			Whitelist: c.Whitelists,
 		},
+		conf:   &c,
+		Engine: engine,
+		Log:    log.New(),
 	}
 	return s, nil
 }

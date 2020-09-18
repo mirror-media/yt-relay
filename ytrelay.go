@@ -54,15 +54,16 @@ type VideoList struct {
 
 type Options struct {
 	ChannelID  string `form:"channelId"`  // For YouTube
+	EventType  string `form:"eventType"`
 	IDs        string `form:"id"`         // For YouTube
 	MaxResults int64  `form:"maxResults"` // For YouTube
+	Order      string `form:"order"`      // For YouTube
 	PageToken  string `form:"pageToken"`  // For YouTube
 	Part       string `form:"part"`       // For YouTube
 	PlaylistID string `form:"playlistId"` // For YouTube
+	Query      string `form:"q"`          // For YouTube
 	SafeSearch string `form:"safeSearch"` // For YouTube
 	Type       string `form:"type"`       // For YouTube
-	Order      string `form:"order"`      // For YouTube
-	Query      string `form:"q"`          // For YouTube
 }
 
 type VideoRelay interface {

@@ -33,6 +33,9 @@ func (s *YouTubeServiceV3) Search(options ytrelay.Options) (resp interface{}, er
 	if !isZero(options.ChannelID) {
 		call.ChannelId(options.ChannelID)
 	}
+	if !isZero(options.EventType) {
+		call.EventType(options.EventType)
+	}
 	if !isZero(options.Query) {
 		call.Q(options.Query)
 	}
@@ -47,6 +50,9 @@ func (s *YouTubeServiceV3) Search(options ytrelay.Options) (resp interface{}, er
 	}
 	if !isZero(options.SafeSearch) {
 		call.SafeSearch(options.SafeSearch)
+	}
+	if !isZero(options.Type) {
+		call.Type(options.Type)
 	}
 
 	return call.Do()

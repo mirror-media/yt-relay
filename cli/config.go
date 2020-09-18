@@ -14,7 +14,7 @@ type Conf struct {
 }
 
 func registerFlags(c *Conf, f *flag.FlagSet) {
-	f.StringVar(&c.Address, "address", "127.0.0.1", "Address to bind")
+	f.StringVar(&c.Address, "address", "0.0.0.0", "Address to bind")
 	f.StringVar(&c.ConfigFile, "config", "", "path to the configuration file")
-	f.IntVar(&c.Port, "port", 80, "Port to bind")
+	f.IntVar(&c.Port, "port", 8080, "Port to bind")
 }

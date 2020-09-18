@@ -4,6 +4,7 @@ import (
 	"github.com/mirror-media/yt-relay/config"
 )
 
+// YouTubeAPI implements the Whitelist interface
 type YouTubeAPI struct {
 	Whitelist config.Whitelists
 }

@@ -26,7 +26,7 @@ func New(apiKey string) (*YouTubeServiceV3, error) {
 	}, err
 }
 
-// Search supports the following parameters: part, channelId, q, maxResults, pageToken, order, safeSearch
+// Search supports the following parameters: part, channelId, eventType, q, maxResults, pageToken, order, safeSearch, type
 func (s *YouTubeServiceV3) Search(options ytrelay.Options) (resp interface{}, err error) {
 	yt := s.youtubeService
 	call := yt.Search.List(strings.Split(options.Part, ","))

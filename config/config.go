@@ -27,6 +27,10 @@ func (c *Conf) Valid() bool {
 		return false
 	}
 
+	if c.Port == 0 {
+		return false
+	}
+
 	if len(c.Whitelists.ChannelIDs) == 0 {
 		return false
 	}

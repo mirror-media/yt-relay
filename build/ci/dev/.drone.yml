@@ -19,7 +19,7 @@ pipeline:
     secrets: [google_credentials]
     commands:
       - gcloud source repos clone configs gcr_configs
-      - cp gcr_configs/configs/mirror-media/yt-relay/dev/config.yml ./config.yml
+      - cp ./gcr_configs/configs/mirror-media/yt-relay/dev/config.yml ./config.yml
       - rm -rf gcr_configs
     when:
       event: [push]

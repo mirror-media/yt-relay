@@ -10,15 +10,11 @@ type YouTubeAPI struct {
 }
 
 func (api YouTubeAPI) ValidateChannelID(channelID string) bool {
-	if effective, present := api.Whitelist.ChannelIDs[channelID]; present && effective {
-		return true
-	}
-	return false
+	effective, present := api.Whitelist.ChannelIDs[channelID]
+	return present && effective
 }
 
 func (api YouTubeAPI) ValidatePlaylistIDs(playlistID string) bool {
-	if effective, present := api.Whitelist.PlaylistIDs[playlistID]; present && effective {
-		return true
-	}
-	return false
+	effective, present := api.Whitelist.PlaylistIDs[playlistID]
+	return present && effective
 }

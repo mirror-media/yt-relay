@@ -64,7 +64,7 @@ func Set(r *gin.Engine, relayService ytrelay.VideoRelay, whitelist ytrelay.APIWh
 
 	// list video by video id
 	// IDs of videos is required
-	ytRouter.GET("/video", func(c *gin.Context) {
+	ytRouter.GET("/videos", func(c *gin.Context) {
 
 		apiLogger := log.WithFields(log.Fields{
 			"path": c.FullPath(),

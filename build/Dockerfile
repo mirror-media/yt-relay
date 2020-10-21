@@ -16,4 +16,4 @@ COPY --from=build /yt-relay/bin/ .
 COPY --from=build /yt-relay/config.yml .
 
 EXPOSE 8080
-CMD ["./yt-relay", "serve", "-config", "./config.yml", "-address", "0.0.0.0", "-port", "8080"]
+CMD ["./yt-relay", "serve", "-config", "./config/config.yml", "-address", "0.0.0.0", "-port", "8080"]

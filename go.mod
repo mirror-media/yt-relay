@@ -1,5 +1,5 @@
 module github.com/mirror-media/yt-relay
-replace github.com/mirror-media/yt-relay => /Users/andy/mirror/yt-relay
+
 go 1.15
 
 require (

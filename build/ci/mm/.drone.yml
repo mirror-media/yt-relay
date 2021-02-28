@@ -14,12 +14,13 @@ pipeline:
       event: [push]
       branch: [dev]
 
-  getConfig:
+  prepareDevEnv:
     image: gcr.io/mirrormedia-1470651750304/drone-cloud-sdk:latest
     secrets: [google_credentials]
     commands:
       - gcloud source repos clone configs dockerignore/gcr_configs
       - mkdir configs
+      - ln -s ./build/ci/mm/dev/Dockerfile ./Dockerfile
       - cp ./dockerignore/gcr_configs/mirror-media/yt-relay/dev/config.yml ./configs/config.yml
       - cp ./dockerignore/gcr_configs/mirror-media/yt-relay/dev/.kube.yml ./.kube.yml
     when:

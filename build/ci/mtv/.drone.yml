@@ -29,12 +29,13 @@ steps:
       event:
         - push
 
-  - name: getDevConfigAndDeployment
+  - name: prepareDevEnv
     pull: if-not-exists
     image: gcr.io/mirror-tv-275709/drone-cloud-sdk:mirror-tv
     commands:
       - gcloud source repos clone configs dockerignore/gcr_configs
       - mkdir configs
+      - ln -s ./build/ci/mtv/dev/Dockerfile ./Dockerfile
       - cp ./dockerignore/gcr_configs/yt-relay/dev/config.yml ./configs/config.yml
       - cp ./gcr_configs/yt-relay/dev/.kube.yml ./.kube.yml
     environment:
@@ -46,11 +47,12 @@ steps:
       event:
         - push
 
-  - name: getStagingDeployment
+  - name: prepareStagingEnv
     pull: if-not-exists
     image: gcr.io/mirror-tv-275709/drone-cloud-sdk:mirror-tv
     commands:
       - gcloud source repos clone configs dockerignore/gcr_configs
+      - ln -s ./build/ci/mtv/staging/Dockerfile ./Dockerfile
       - cp ./gcr_configs/yt-relay/staging/.kube.yml ./.kube.yml
     environment:
       GOOGLE_CREDENTIALS:

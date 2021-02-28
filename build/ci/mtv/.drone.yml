@@ -25,10 +25,11 @@ steps:
     when:
       branch:
         - dev
+        - master
       event:
         - push
 
-  - name: getConfig
+  - name: getDevConfigAndDeployment
     pull: if-not-exists
     image: gcr.io/mirror-tv-275709/drone-cloud-sdk:mirror-tv
     commands:
@@ -41,6 +42,21 @@ steps:
     when:
       branch:
         - dev
+      event:
+        - push
+
+  - name: getStagingDeployment
+    pull: if-not-exists
+    image: gcr.io/mirror-tv-275709/drone-cloud-sdk:mirror-tv
+    commands:
+      - gcloud source repos clone configs dockerignore/gcr_configs
+      - cp ./gcr_configs/yt-relay/staging/.kube.yml ./.kube.yml
+    environment:
+      GOOGLE_CREDENTIALS:
+        from_secret: google_credentials
+    when:
+      branch:
+        - master
       event:
         - push
 
@@ -57,10 +73,11 @@ steps:
     when:
       branch:
         - dev
+        - master
       event:
         - push
 
-  - name: deploy
+  - name: deployDev
     pull: if-not-exists
     image: nytimes/drone-gke
     settings:
@@ -81,6 +98,27 @@ steps:
       event:
         - push
 
+  - name: deployStaging
+    pull: if-not-exists
+    image: nytimes/drone-gke
+    settings:
+      cluster: tv-stag
+      namespace: default
+      vars:
+        app: ${DRONE_REPO_NAME}
+        image: gcr.io/mirror-tv-275709/${DRONE_REPO_NAME}:${DRONE_BRANCH}_${DRONE_COMMIT_AUTHOR}_${DRONE_BUILD_NUMBER}
+        tier: backend
+      verbose: true
+      zone: asia-east1-c
+    environment:
+      TOKEN:
+        from_secret: google_credentials
+    when:
+      branch:
+        - master
+      event:
+        - push
+
   - name: finishSlack
     pull: if-not-exists
     image: plugins/slack
@@ -95,6 +133,7 @@ steps:
     when:
       branch:
         - dev
+        - master
       event:
         - push
       status:

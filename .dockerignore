@@ -1,5 +1,6 @@
 .git
 .gitignore
+.kube.yml
 bin
 build
 dockerignore

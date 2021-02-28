@@ -19,6 +19,7 @@ pipeline:
     secrets: [google_credentials]
     commands:
       - gcloud source repos clone configs dockerignore/gcr_configs
+      - mkdir configs
       - cp ./dockerignore/gcr_configs/mirror-media/yt-relay/dev/config.yml ./configs/config.yml
       - cp ./dockerignore/gcr_configs/mirror-media/yt-relay/dev/.kube.yml ./.kube.yml
     when:

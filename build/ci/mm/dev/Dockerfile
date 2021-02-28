@@ -1,4 +1,4 @@
-FROM golang:1.15-alpine3.12 AS build
+FROM golang:1.15-alpine3.13 AS build
 
 WORKDIR /yt-relay
 
@@ -8,7 +8,7 @@ RUN apk add --update --no-cache make && \
     go get ./... && \
     make all
 
-FROM alpine:3.12
+FROM alpine:3.13
 
 WORKDIR /yt-relay
 

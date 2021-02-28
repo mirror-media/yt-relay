@@ -37,7 +37,7 @@ steps:
       - mkdir configs
       - ln -s ./build/ci/mtv/dev/Dockerfile ./Dockerfile
       - cp ./dockerignore/gcr_configs/yt-relay/dev/config.yml ./configs/config.yml
-      - cp ./gcr_configs/yt-relay/dev/.kube.yml ./.kube.yml
+      - cp ./dockerignore/gcr_configs/yt-relay/dev/.kube.yml ./.kube.yml
     environment:
       GOOGLE_CREDENTIALS:
         from_secret: google_credentials
@@ -53,7 +53,7 @@ steps:
     commands:
       - gcloud source repos clone configs dockerignore/gcr_configs
       - ln -s ./build/ci/mtv/staging/Dockerfile ./Dockerfile
-      - cp ./gcr_configs/yt-relay/staging/.kube.yml ./.kube.yml
+      - cp ./dockerignore/gcr_configs/yt-relay/staging/.kube.yml ./.kube.yml
     environment:
       GOOGLE_CREDENTIALS:
         from_secret: google_credentials

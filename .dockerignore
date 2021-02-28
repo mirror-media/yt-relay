@@ -2,6 +2,6 @@
 .gitignore
 bin
 build
+dockerignore
 NOTICE
 pkg
-README.md

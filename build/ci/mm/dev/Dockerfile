@@ -13,7 +13,7 @@ FROM alpine:3.12
 WORKDIR /yt-relay
 
 COPY --from=build /yt-relay/bin/ .
-COPY --from=build /yt-relay/config.yml .
+COPY --from=build /yt-relay/configs ./configs
 
 EXPOSE 8080
-CMD ["./yt-relay", "serve", "-config", "./config.yml", "-address", "0.0.0.0", "-port", "8080"]
+CMD ["./yt-relay", "serve", "-config", "./configs/config.yml", "-address", "0.0.0.0", "-port", "8080"]

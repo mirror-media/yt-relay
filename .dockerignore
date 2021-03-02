@@ -1,7 +1,8 @@
 .git
 .gitignore
+.kube.yml
 bin
 build
+dockerignore
 NOTICE
 pkg
-README.md

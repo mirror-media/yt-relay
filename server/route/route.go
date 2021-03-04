@@ -22,6 +22,12 @@ const (
 // TODO move whitelist to YouTube relay service
 func Set(r *gin.Engine, relayService ytrelay.VideoRelay, whitelist ytrelay.APIWhitelist) error {
 
+	// health check api
+	// As more resources and component are used, they should be checked in the api
+	r.GET("/health", func(c *gin.Context) {
+		c.AbortWithStatus(http.StatusOK)
+	})
+
 	ytRouter := r.Group("/youtube/v3")
 
 	// search videos. ChannelID is required

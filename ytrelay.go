@@ -4,6 +4,7 @@ package ytrelay
 type Options struct {
 	ChannelID  string `form:"channelId"`  // For YouTube
 	EventType  string `form:"eventType"`  // For YouTube
+	Fields     string `form:"fields"`     // For YouTube
 	IDs        string `form:"id"`         // For YouTube
 	MaxResults int64  `form:"maxResults"` // For YouTube
 	Order      string `form:"order"`      // For YouTube

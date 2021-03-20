@@ -80,6 +80,9 @@ func (s *YouTubeServiceV3) ListByVideoIDs(options ytrelay.Options) (resp interfa
 func (s *YouTubeServiceV3) ListPlaylistVideos(options ytrelay.Options) (resp interface{}, err error) {
 	yt := s.youtubeService
 	call := yt.PlaylistItems.List(strings.Split(options.Part, ","))
+	if !isZero(options.Fields) {
+		call.PlaylistId(options.Fields)
+	}
 	if !isZero(options.PlaylistID) {
 		call.PlaylistId(options.PlaylistID)
 	}

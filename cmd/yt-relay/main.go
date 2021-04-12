@@ -1,7 +1,7 @@
 package main
 
 import (
-	"os"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/mirror-media/yt-relay/cli"
 	"github.com/mirror-media/yt-relay/cli/serve"
@@ -15,7 +15,7 @@ func main() {
 
 	err := cli.Start(cmds)
 	if err != nil {
-		os.Exit(1)
+		log.Fatal(err)
 	}
 
 }

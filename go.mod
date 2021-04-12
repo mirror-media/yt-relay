@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/gin-gonic/gin v1.6.3
+	github.com/go-redis/redis/v8 v8.8.0 // indirect
 	github.com/google/go-cmp v0.5.5 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.8.1

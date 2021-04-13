@@ -7,6 +7,9 @@ import (
 	"github.com/gin-gonic/gin"
 	ytrelay "github.com/mirror-media/yt-relay"
 	"github.com/mirror-media/yt-relay/api"
+	"github.com/mirror-media/yt-relay/cache"
+	"github.com/mirror-media/yt-relay/config"
+	"github.com/mirror-media/yt-relay/middleware"
 	"github.com/mirror-media/yt-relay/relay"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -20,7 +23,7 @@ const (
 
 // Set sets the routing for the gin engine
 // TODO move whitelist to YouTube relay service
-func Set(r *gin.Engine, relayService ytrelay.VideoRelay, whitelist ytrelay.APIWhitelist) error {
+func Set(r *gin.Engine, appName string, relayService ytrelay.VideoRelay, whitelist ytrelay.APIWhitelist, cacheConf config.Cache, cache cache.Rediser) error {
 
 	// health check api
 	// As more resources and component are used, they should be checked in the api
@@ -29,6 +32,10 @@ func Set(r *gin.Engine, relayService ytrelay.VideoRelay, whitelist ytrelay.APIWh
 	})
 
 	ytRouter := r.Group("/youtube/v3")
+
+	if cacheConf.IsEnabled {
+		ytRouter.Use(middleware.Cache(appName, cacheConf, cache))
+	}
 
 	// search videos. ChannelID is required
 	ytRouter.GET("/search", func(c *gin.Context) {

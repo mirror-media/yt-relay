@@ -4,11 +4,14 @@ import (
 	"errors"
 	"io/ioutil"
 	"log"
+	"regexp"
 
 	"gopkg.in/yaml.v2"
 )
 
 type Conf struct {
+	// AppName is only allowed tt have alphanumeric, dash, and comma.
+	AppName    string `yaml:"appName"`
 	Address    string
 	ApiKey     string `yaml:"apiKey"`
 	Cache      Cache  `yaml:"cache"`
@@ -24,9 +27,11 @@ type Whitelists struct {
 }
 
 type Cache struct {
-	IsEnabled    bool           `yaml:"isEnabled"`
-	TTL          int            `yaml:"ttl"`
-	OverwriteTTL []OverwriteTTL `yaml:"overwriteTtl"`
+	IsEnabled    bool            `yaml:"isEnabled"`
+	DisabledAPIs map[string]bool `yaml:"disabledApis"`
+	TTL          int             `yaml:"ttl"`
+	ErrorTTL     int             `yaml:"errorTtl"`
+	OverwriteTTL map[string]int  `yaml:"overwriteTtl"`
 }
 
 type OverwriteTTL struct {
@@ -79,6 +84,11 @@ type RedisAddress struct {
 }
 
 func (c *Conf) Valid() bool {
+
+	isValidAppName, _ := regexp.MatchString("^[a-zA-Z0-9.-]+$", c.AppName)
+	if !isValidAppName {
+		return false
+	}
 
 	if c.ApiKey == "" {
 		return false

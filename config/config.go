@@ -3,8 +3,9 @@ package config
 import (
 	"errors"
 	"io/ioutil"
-	"log"
 	"regexp"
+
+	log "github.com/sirupsen/logrus"
 
 	"gopkg.in/yaml.v2"
 )

@@ -20,7 +20,7 @@ type Conf struct {
 	Whitelists Whitelists    `yaml:"whitelists"`
 }
 
-// Whitelist are maps, key is the whitelist string, value determines if it should be effective
+// Whitelists are maps, key is the whitelist string, value determines if it should be effective
 type Whitelists struct {
 	ChannelIDs  map[string]bool `yaml:"channelIDs"`
 	PlaylistIDs map[string]bool `yaml:"playlistIDs"`

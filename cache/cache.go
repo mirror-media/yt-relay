@@ -21,6 +21,20 @@ type Rediser interface {
 	Del(ctx context.Context, keys ...string) *redis.IntCmd
 }
 
+func GetCacheKey(namespace string, name string) (string, error) {
+	if namespace == "" {
+		err := errors.New("namespace cannot be empty")
+		return "", err
+	}
+
+	if name == "" {
+		err := errors.New("key cannot be empty")
+		return "", err
+	}
+
+	return fmt.Sprintf("%s.cache.%s", namespace, name), nil
+}
+
 // TOTO replica type with writers and readers
 
 func NewRedis(c config.Conf) (rdb Rediser, err error) {

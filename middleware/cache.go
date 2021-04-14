@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/pkg/errors"
@@ -14,21 +13,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func GetCacheKey(namespace string, name string) (string, error) {
-	if namespace == "" {
-		err := errors.New("namespace cannot be empty")
-		return "", err
-	}
-
-	if name == "" {
-		err := errors.New("key cannot be empty")
-		return "", err
-	}
-
-	return fmt.Sprintf("%s.cache.%s", namespace, name), nil
-}
-
-func Cache(namespace string, cacheConf config.Cache, cache cache.Rediser) gin.HandlerFunc {
+func Cache(namespace string, cacheConf config.Cache, cacheProvider cache.Rediser) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		url := c.Request.URL
 
@@ -40,14 +25,14 @@ func Cache(namespace string, cacheConf config.Cache, cache cache.Rediser) gin.Ha
 		}
 		// read cache
 		uri := c.Request.RequestURI
-		key, err := GetCacheKey(namespace, uri)
+		key, err := cache.GetCacheKey(namespace, uri)
 		if err != nil {
 			err = errors.Wrap(err, "Fail to get cache key in cache middleware")
 			log.Error(err)
 			c.AbortWithStatusJSON(http.StatusInternalServerError, api.ErrorResp{Error: err.Error()})
 			return
 		}
-		result, err := cache.Get(c.Request.Context(), key).Result()
+		result, err := cacheProvider.Get(c.Request.Context(), key).Result()
 		if err != nil {
 			c.Next()
 			return

@@ -67,10 +67,15 @@ func saveCache(cacheConf config.Cache, cacheProvider cache.Rediser, apiLogger *l
 		return
 	}
 	key, err := cache.GetCacheKey(appName, request.URL.String())
-	cmd := cacheProvider.Set(request.Context(), key, s, ttl)
-	if cmd.Err() != nil {
-		apiLogger.Errorf("setting cache encountered error for %s: %s ", request.URL.String(), err)
+	if err != nil {
+		apiLogger.Errorf("GetCacheKey for %s encounter error:%v", request.URL.String(), err)
+	}
+	err = cacheProvider.Set(request.Context(), key, string(s), ttl).Err()
+	if err != nil {
+		apiLogger.Errorf("setting cache encountered error for %s: %v ", request.URL.String(), err)
 		return
+	} else {
+		apiLogger.Infof("cache for %s is set at %v", request.URL.String(), time.Now().UTC())
 	}
 }
 

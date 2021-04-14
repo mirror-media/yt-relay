@@ -32,10 +32,8 @@ func GetCacheKey(namespace string, name string) (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf("%s.cache.%s", namespace, name), nil
+	return fmt.Sprintf("%s:cache:%s", namespace, name), nil
 }
-
-// TOTO replica type with writers and readers
 
 func NewRedis(c config.Conf) (rdb Rediser, err error) {
 	switch c.Redis.Type {

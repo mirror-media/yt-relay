@@ -3,25 +3,93 @@ package config
 import (
 	"errors"
 	"io/ioutil"
-	"log"
+	"regexp"
+
+	log "github.com/sirupsen/logrus"
 
 	"gopkg.in/yaml.v2"
 )
 
 type Conf struct {
+	// AppName is only allowed tt have alphanumeric, dash, and comma.
+	AppName    string `yaml:"appName"`
 	Address    string
 	ApiKey     string `yaml:"apiKey"`
+	Cache      Cache  `yaml:"cache"`
 	Port       int
-	Whitelists Whitelists `yaml:"whitelists"`
+	Redis      *RedisService `yaml:"redis"`
+	Whitelists Whitelists    `yaml:"whitelists"`
 }
 
-// Whitelist are maps, key is the whitelist string, value determines if it should be effective
+// Whitelists are maps, key is the whitelist string, value determines if it should be effective
 type Whitelists struct {
 	ChannelIDs  map[string]bool `yaml:"channelIDs"`
 	PlaylistIDs map[string]bool `yaml:"playlistIDs"`
 }
 
+type Cache struct {
+	IsEnabled    bool            `yaml:"isEnabled"`
+	DisabledAPIs map[string]bool `yaml:"disabledApis"`
+	TTL          int             `yaml:"ttl"`
+	ErrorTTL     int             `yaml:"errorTtl"`
+	OverwriteTTL map[string]int  `yaml:"overwriteTtl"`
+}
+
+type OverwriteTTL struct {
+	TTL       int    `yaml:"ttl"`
+	PrefixAPI string `yaml:"apiPrefix"`
+}
+
+// RedisService defines the conf of redis for cache. User should find the right configuration according to the type
+type RedisService struct {
+	Type           RedisType              `yaml:"type"`
+	Cluster        *RedisCluster          `yaml:"cluster"`
+	SingleInstance *RedisSingleInstance   `yaml:"single"`
+	Sentinel       *RedisSentinel         `yaml:"sentinel"`
+	Replica        *RedisReplicaInstances `yaml:"replica"`
+}
+
+type RedisType string
+
+const (
+	Cluster  RedisType = "cluster"
+	Single   RedisType = "single"
+	Sentinel RedisType = "sentinel"
+	Replica  RedisType = "replica"
+)
+
+type RedisCluster struct {
+	Addrs    []RedisAddress `yaml:"addresses"`
+	Password string         `yaml:"password"`
+}
+
+type RedisSingleInstance struct {
+	Instance RedisAddress `yaml:"instance"`
+	Password string       `yaml:"password"`
+}
+
+type RedisSentinel struct {
+	Addrs    []RedisAddress `yaml:"addresses"`
+	Password string         `yaml:"password"`
+}
+
+type RedisReplicaInstances struct {
+	MasterAddrs []RedisAddress `yaml:"writers"`
+	SlaveAddrs  []RedisAddress `yaml:"readers"`
+	Password    string         `yaml:"password"`
+}
+
+type RedisAddress struct {
+	Addr string `yaml:"address"`
+	Port int    `yaml:"port"`
+}
+
 func (c *Conf) Valid() bool {
+
+	isValidAppName, _ := regexp.MatchString("^[a-zA-Z0-9.-]+$", c.AppName)
+	if !isValidAppName {
+		return false
+	}
 
 	if c.ApiKey == "" {
 		return false
@@ -33,6 +101,58 @@ func (c *Conf) Valid() bool {
 
 	if len(c.Whitelists.PlaylistIDs) == 0 {
 		return false
+	}
+
+	if c.Redis != nil {
+		redis := c.Redis
+		switch redis.Type {
+		case Cluster:
+			if redis.Cluster == nil {
+				return false
+			}
+
+			cluster := redis.Cluster
+
+			if len(cluster.Addrs) == 0 {
+				return false
+			}
+		case Single:
+			if redis.SingleInstance == nil {
+				return false
+			}
+
+			single := redis.SingleInstance
+
+			if single.Instance.Addr == "" {
+				return false
+			}
+		case Sentinel:
+			if redis.Sentinel == nil {
+				return false
+			}
+
+			sentinel := redis.Sentinel
+
+			if len(sentinel.Addrs) == 0 {
+				return false
+			}
+		case Replica:
+			if redis.Replica == nil {
+				return false
+			}
+
+			replica := redis.Replica
+
+			if len(replica.MasterAddrs) == 0 {
+				return false
+			}
+
+			if len(replica.SlaveAddrs) == 0 {
+				return false
+			}
+		default:
+			return false
+		}
 	}
 
 	return true

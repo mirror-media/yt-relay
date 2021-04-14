@@ -1,8 +1,10 @@
 package route
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	ytrelay "github.com/mirror-media/yt-relay"
@@ -21,9 +23,48 @@ const (
 	ErrorEmptyID   = "id cannot be empty"
 )
 
+func getCacheTTL(cacheConf config.Cache, api string) (ttl time.Duration, isDisabled bool) {
+
+	isDisabled = cacheConf.DisabledAPIs[api]
+
+	seconds, ok := cacheConf.OverwriteTTL[api]
+	if ok {
+		ttl = time.Duration(seconds) * time.Second
+	} else {
+		ttl = time.Duration(cacheConf.TTL) * time.Second
+	}
+	return ttl, isDisabled
+}
+
+func saveOKCache(isEnabled bool, cacheConf config.Cache, cacheProvider cache.Rediser, apiLogger *log.Entry, appName string, request http.Request, resp interface{}) {
+
+	if cacheConf.IsEnabled {
+		ttl, isCacheDisabledForAPI := getCacheTTL(cacheConf, request.RequestURI)
+		if !isCacheDisabledForAPI {
+			saveCache(cacheConf, cacheProvider, apiLogger, appName, request, resp, ttl)
+		} else {
+			apiLogger.Infof("cache is disabled for %s", request.URL.String())
+		}
+	}
+}
+
+func saveCache(cacheConf config.Cache, cacheProvider cache.Rediser, apiLogger *log.Entry, appName string, request http.Request, resp interface{}, ttl time.Duration) {
+	s, err := json.Marshal(resp)
+	if err != nil {
+		apiLogger.Errorf("Cannot marshal resp for %s: %s", request.URL.String(), err)
+		return
+	}
+	key, err := cache.GetCacheKey(appName, request.URL.String())
+	cmd := cacheProvider.Set(request.Context(), key, s, ttl)
+	if cmd.Err() != nil {
+		apiLogger.Errorf("setting cache encountered error for %s: %s ", request.URL.String(), err)
+		return
+	}
+}
+
 // Set sets the routing for the gin engine
 // TODO move whitelist to YouTube relay service
-func Set(r *gin.Engine, appName string, relayService ytrelay.VideoRelay, whitelist ytrelay.APIWhitelist, cacheConf config.Cache, cache cache.Rediser) error {
+func Set(r *gin.Engine, appName string, relayService ytrelay.VideoRelay, whitelist ytrelay.APIWhitelist, cacheConf config.Cache, cacheProvider cache.Rediser) error {
 
 	// health check api
 	// As more resources and component are used, they should be checked in the api
@@ -34,7 +75,7 @@ func Set(r *gin.Engine, appName string, relayService ytrelay.VideoRelay, whiteli
 	ytRouter := r.Group("/youtube/v3")
 
 	if cacheConf.IsEnabled {
-		ytRouter.Use(middleware.Cache(appName, cacheConf, cache))
+		ytRouter.Use(middleware.Cache(appName, cacheConf, cacheProvider))
 	}
 
 	// search videos. ChannelID is required
@@ -72,6 +113,7 @@ func Set(r *gin.Engine, appName string, relayService ytrelay.VideoRelay, whiteli
 			c.AbortWithStatusJSON(http.StatusBadRequest, api.ErrorResp{Error: err.Error()})
 			return
 		}
+		saveOKCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, resp)
 		c.JSON(http.StatusOK, resp)
 	})
 
@@ -120,6 +162,7 @@ func Set(r *gin.Engine, appName string, relayService ytrelay.VideoRelay, whiteli
 			}
 		}
 
+		saveOKCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, resp)
 		c.JSON(http.StatusOK, resp)
 	})
 
@@ -159,6 +202,7 @@ func Set(r *gin.Engine, appName string, relayService ytrelay.VideoRelay, whiteli
 			return
 		}
 
+		saveOKCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, resp)
 		c.JSON(http.StatusOK, resp)
 	})
 

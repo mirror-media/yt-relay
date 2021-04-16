@@ -55,6 +55,16 @@ pipeline:
       event: [push]
       branch: [dev]
 
+  sendWebhookKeel:
+    image: curlimages/curl:7.75.0
+    commands:
+      - curl --request POST
+        --data "{\"name\":\"gcr.io/yt-relay-275709/${DRONE_REPO_NAME}\",\"tag\":\"${DRONE_BRANCH}_${DRONE_COMMIT_AUTHOR}_${DRONE_BUILD_NUMBER}\"}"
+        https://keel-${DRONE_BRANCH}.mnews.tw/v1/webhooks/native
+    when:
+      event: [push]
+      branch: [dev, stag]
+
   finishSlack:
     image: plugins/slack
     channel: jenkins

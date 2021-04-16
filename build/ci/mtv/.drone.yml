@@ -122,6 +122,20 @@ steps:
       event:
         - push
 
+  - name: sendWebhookKeel
+    pull: if-not-exists
+    image: curlimages/curl:7.75.0
+    commands:
+      - curl --request POST
+        --data "{\"name\":\"gcr.io/mirror-tv-275709/${DRONE_REPO_NAME}\",\"tag\":\"${DRONE_BRANCH}_${DRONE_COMMIT_AUTHOR}_${DRONE_BUILD_NUMBER}\"}"
+        https://keel-${DRONE_BRANCH}.mnews.tw/v1/webhooks/native
+    when:
+      branch:
+        - dev
+        - stag
+      event:
+        - push
+
   - name: finishSlack
     pull: if-not-exists
     image: plugins/slack

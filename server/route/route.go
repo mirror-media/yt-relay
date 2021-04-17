@@ -142,9 +142,8 @@ func Set(r *gin.Engine, appName string, relayService ytrelay.VideoRelay, whiteli
 		if err != nil {
 			apiLogger.Error(err)
 			resp := api.ErrorResp{Error: err.Error()}
-			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, http.StatusBadRequest, resp)
-			// FIXME internal error
-			c.AbortWithStatusJSON(http.StatusBadRequest, api.ErrorResp{Error: err.Error()})
+			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, http.StatusInternalServerError, resp)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, api.ErrorResp{Error: err.Error()})
 			return
 		}
 		saveOKCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, resp)
@@ -186,9 +185,8 @@ func Set(r *gin.Engine, appName string, relayService ytrelay.VideoRelay, whiteli
 		if err != nil {
 			apiLogger.Error(err)
 			resp := api.ErrorResp{Error: err.Error()}
-			// FIXME internal error
-			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, http.StatusBadRequest, resp)
-			c.AbortWithStatusJSON(http.StatusBadRequest, resp)
+			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, http.StatusInternalServerError, resp)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, resp)
 			return
 		}
 
@@ -248,9 +246,8 @@ func Set(r *gin.Engine, appName string, relayService ytrelay.VideoRelay, whiteli
 		if err != nil {
 			apiLogger.Error(err)
 			resp := api.ErrorResp{Error: err.Error()}
-			// FIXME internal error
-			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, http.StatusBadRequest, resp)
-			c.AbortWithStatusJSON(http.StatusBadRequest, resp)
+			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, http.StatusInternalServerError, resp)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, resp)
 			return
 		}
 

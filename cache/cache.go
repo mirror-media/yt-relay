@@ -52,8 +52,14 @@ func NewRedis(c config.Conf) (rdb Rediser, err error) {
 			addrs = append(addrs, fmt.Sprintf("%s:%d", a.Addr, a.Port))
 		}
 		rdb = redis.NewClusterClient(&redis.ClusterOptions{
-			Addrs:    addrs,
-			Password: cluster.Password,
+			Addrs:        addrs,
+			Password:     cluster.Password,
+			PoolSize:     20,
+			MaxRetries:   0,
+			DialTimeout:  time.Second,
+			IdleTimeout:  10 * time.Second,
+			ReadTimeout:  time.Second,
+			WriteTimeout: time.Second,
 		})
 	case config.Single:
 		single := c.Redis.SingleInstance
@@ -80,6 +86,12 @@ func NewRedis(c config.Conf) (rdb Rediser, err error) {
 		rdb = redis.NewFailoverClient(&redis.FailoverOptions{
 			SentinelAddrs: addrs,
 			Password:      sentinel.Password,
+			PoolSize:      20,
+			MaxRetries:    0,
+			DialTimeout:   time.Second,
+			IdleTimeout:   10 * time.Second,
+			ReadTimeout:   time.Second,
+			WriteTimeout:  time.Second,
 		})
 	case config.Replica:
 		replica := c.Redis.Replica

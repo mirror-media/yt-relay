@@ -59,7 +59,7 @@ func NewReplicaRedisService(MasterAddrs []config.RedisAddress, SlaveAddrs []conf
 	instance.writers = writers
 	readers := make([]*redis.Client, 0, len(SlaveAddrs))
 	for _, a := range SlaveAddrs {
-		writers = append(writers, redis.NewClient(&redis.Options{
+		readers = append(readers, redis.NewClient(&redis.Options{
 			Addr:     fmt.Sprintf("%s:%d", a.Addr, a.Port),
 			Password: Password,
 		}))

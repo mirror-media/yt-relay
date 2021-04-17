@@ -52,16 +52,28 @@ func NewReplicaRedisService(MasterAddrs []config.RedisAddress, SlaveAddrs []conf
 	writers := make([]*redis.Client, 0, len(MasterAddrs))
 	for _, a := range MasterAddrs {
 		writers = append(writers, redis.NewClient(&redis.Options{
-			Addr:     fmt.Sprintf("%s:%d", a.Addr, a.Port),
-			Password: Password,
+			Addr:         fmt.Sprintf("%s:%d", a.Addr, a.Port),
+			Password:     Password,
+			PoolSize:     20,
+			MaxRetries:   0,
+			DialTimeout:  time.Second,
+			IdleTimeout:  10 * time.Second,
+			ReadTimeout:  time.Second,
+			WriteTimeout: time.Second,
 		}))
 	}
 	instance.writers = writers
 	readers := make([]*redis.Client, 0, len(SlaveAddrs))
 	for _, a := range SlaveAddrs {
 		writers = append(writers, redis.NewClient(&redis.Options{
-			Addr:     fmt.Sprintf("%s:%d", a.Addr, a.Port),
-			Password: Password,
+			Addr:         fmt.Sprintf("%s:%d", a.Addr, a.Port),
+			Password:     Password,
+			PoolSize:     20,
+			MaxRetries:   0,
+			DialTimeout:  time.Second,
+			IdleTimeout:  10 * time.Second,
+			ReadTimeout:  time.Second,
+			WriteTimeout: time.Second,
 		}))
 	}
 	instance.readers = readers

@@ -27,18 +27,30 @@ func Cache(namespace string, cacheConf config.Cache, cacheProvider cache.Rediser
 		uri := c.Request.RequestURI
 		key, err := cache.GetCacheKey(namespace, uri)
 		if err != nil {
-			err = errors.Wrap(err, "Fail to get cache key in cache middleware")
+			err = errors.Wrap(err, "Fail to create cache key in cache middleware")
 			log.Error(err)
 			c.AbortWithStatusJSON(http.StatusInternalServerError, api.ErrorResp{Error: err.Error()})
 			return
 		}
 		result, err := cacheProvider.Get(c.Request.Context(), key).Result()
 		if err != nil {
+			err = errors.Wrapf(err, "Fail to get cache value for %s in cache middleware", key)
+			log.Info(err)
+			c.Next()
+			return
+		}
+
+		var cacheResp cache.HTTP
+
+		err = json.Unmarshal([]byte(result), &cacheResp)
+		if err != nil {
+			err = errors.Wrap(err, "Fail to unmarshal cache in cache middleware")
+			log.Error(err)
 			c.Next()
 			return
 		}
 
 		log.Infof("respond with cache for %s", uri)
-		c.AbortWithStatusJSON(http.StatusOK, json.RawMessage(result))
+		c.AbortWithStatusJSON(cacheResp.StatusCode, json.RawMessage(cacheResp.Response))
 	}
 }

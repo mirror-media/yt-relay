@@ -41,29 +41,37 @@ func saveOKCache(isEnabled bool, cacheConf config.Cache, cacheProvider cache.Red
 	if cacheConf.IsEnabled {
 		ttl, isCacheDisabledForAPI := getCacheTTL(cacheConf, request.RequestURI)
 		if !isCacheDisabledForAPI {
-			saveCache(cacheConf, cacheProvider, apiLogger, appName, request, resp, ttl)
+			saveCache(cacheConf, cacheProvider, apiLogger, appName, request, http.StatusOK, resp, ttl)
 		} else {
 			apiLogger.Infof("cache is disabled for %s", request.URL.String())
 		}
 	}
 }
-func saveErrCache(isEnabled bool, cacheConf config.Cache, cacheProvider cache.Rediser, apiLogger *log.Entry, appName string, request http.Request, resp interface{}) {
+func saveErrCache(isEnabled bool, cacheConf config.Cache, cacheProvider cache.Rediser, apiLogger *log.Entry, appName string, request http.Request, httpResponseCode uint, resp interface{}) {
 
 	if cacheConf.IsEnabled {
 		_, isCacheDisabledForAPI := getCacheTTL(cacheConf, request.RequestURI)
 		if !isCacheDisabledForAPI {
 			ttl := time.Duration(cacheConf.ErrorTTL) * time.Second
-			saveCache(cacheConf, cacheProvider, apiLogger, appName, request, resp, ttl)
+			saveCache(cacheConf, cacheProvider, apiLogger, appName, request, http.StatusOK, resp, ttl)
 		} else {
 			apiLogger.Infof("cache is disabled for %s", request.URL.String())
 		}
 	}
 }
 
-func saveCache(cacheConf config.Cache, cacheProvider cache.Rediser, apiLogger *log.Entry, appName string, request http.Request, resp interface{}, ttl time.Duration) {
+func saveCache(cacheConf config.Cache, cacheProvider cache.Rediser, apiLogger *log.Entry, appName string, request http.Request, respCode int, resp interface{}, ttl time.Duration) {
 	s, err := json.Marshal(resp)
 	if err != nil {
 		apiLogger.Errorf("Cannot marshal resp for %s: %s", request.URL.String(), err)
+		return
+	}
+	s, err = json.Marshal(cache.HTTP{
+		StatusCode: respCode,
+		Response:   s,
+	})
+	if err != nil {
+		apiLogger.Errorf("Cannot marshal http resp cache for %s: %s", request.URL.String(), err)
 		return
 	}
 	key, err := cache.GetCacheKey(appName, request.URL.String())
@@ -75,7 +83,7 @@ func saveCache(cacheConf config.Cache, cacheProvider cache.Rediser, apiLogger *l
 		apiLogger.Errorf("setting cache encountered error for %s: %v ", request.URL.String(), err)
 		return
 	} else {
-		apiLogger.Infof("cache for %s is set at %v", request.URL.String(), time.Now().UTC())
+		apiLogger.Infof("cache for %s is set for ttl(%d)", request.URL.String(), ttl)
 	}
 }
 
@@ -106,7 +114,7 @@ func Set(r *gin.Engine, appName string, relayService ytrelay.VideoRelay, whiteli
 		if err != nil {
 			apiLogger.Error(err)
 			resp := api.ErrorResp{Error: err.Error()}
-			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, resp)
+			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, http.StatusBadRequest, resp)
 			c.AbortWithStatusJSON(http.StatusBadRequest, resp)
 			return
 		}
@@ -115,7 +123,7 @@ func Set(r *gin.Engine, appName string, relayService ytrelay.VideoRelay, whiteli
 		if queries.Part == "" {
 			apiLogger.Error(ErrorEmptyPart)
 			resp := api.ErrorResp{Error: ErrorEmptyPart}
-			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, resp)
+			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, http.StatusBadRequest, resp)
 			c.AbortWithStatusJSON(http.StatusBadRequest, resp)
 			return
 		}
@@ -125,7 +133,7 @@ func Set(r *gin.Engine, appName string, relayService ytrelay.VideoRelay, whiteli
 			err = fmt.Errorf("channelId(%s) is invalid", queries.ChannelID)
 			apiLogger.Error(err)
 			resp := api.ErrorResp{Error: err.Error()}
-			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, resp)
+			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, http.StatusBadRequest, resp)
 			c.AbortWithStatusJSON(http.StatusBadRequest, resp)
 			return
 		}
@@ -134,7 +142,8 @@ func Set(r *gin.Engine, appName string, relayService ytrelay.VideoRelay, whiteli
 		if err != nil {
 			apiLogger.Error(err)
 			resp := api.ErrorResp{Error: err.Error()}
-			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, resp)
+			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, http.StatusBadRequest, resp)
+			// FIXME internal error
 			c.AbortWithStatusJSON(http.StatusBadRequest, api.ErrorResp{Error: err.Error()})
 			return
 		}
@@ -161,14 +170,14 @@ func Set(r *gin.Engine, appName string, relayService ytrelay.VideoRelay, whiteli
 		if queries.Part == "" {
 			apiLogger.Error(ErrorEmptyPart)
 			resp := api.ErrorResp{Error: ErrorEmptyPart}
-			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, resp)
+			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, http.StatusBadRequest, resp)
 			c.AbortWithStatusJSON(http.StatusBadRequest, resp)
 			return
 		}
 		if queries.IDs == "" {
 			apiLogger.Error(ErrorEmptyID)
 			resp := api.ErrorResp{Error: ErrorEmptyID}
-			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, resp)
+			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, http.StatusBadRequest, resp)
 			c.AbortWithStatusJSON(http.StatusBadRequest, resp)
 			return
 		}
@@ -177,7 +186,8 @@ func Set(r *gin.Engine, appName string, relayService ytrelay.VideoRelay, whiteli
 		if err != nil {
 			apiLogger.Error(err)
 			resp := api.ErrorResp{Error: err.Error()}
-			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, resp)
+			// FIXME internal error
+			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, http.StatusBadRequest, resp)
 			c.AbortWithStatusJSON(http.StatusBadRequest, resp)
 			return
 		}
@@ -189,7 +199,7 @@ func Set(r *gin.Engine, appName string, relayService ytrelay.VideoRelay, whiteli
 				err = errors.Wrap(err, "some video's channel id is invalid")
 				apiLogger.Error(err)
 				resp := api.ErrorResp{Error: err.Error()}
-				saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, resp)
+				saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, http.StatusBadRequest, resp)
 				c.AbortWithStatusJSON(http.StatusBadRequest, resp)
 				return
 			}
@@ -210,7 +220,7 @@ func Set(r *gin.Engine, appName string, relayService ytrelay.VideoRelay, whiteli
 		if err != nil {
 			apiLogger.Error(err)
 			resp := api.ErrorResp{Error: err.Error()}
-			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, resp)
+			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, http.StatusBadRequest, resp)
 			c.AbortWithStatusJSON(http.StatusBadRequest, resp)
 			return
 		}
@@ -219,7 +229,7 @@ func Set(r *gin.Engine, appName string, relayService ytrelay.VideoRelay, whiteli
 		if queries.Part == "" {
 			apiLogger.Error(ErrorEmptyPart)
 			resp := api.ErrorResp{Error: ErrorEmptyPart}
-			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, resp)
+			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, http.StatusBadRequest, resp)
 			c.AbortWithStatusJSON(http.StatusBadRequest, resp)
 			return
 		}
@@ -229,7 +239,7 @@ func Set(r *gin.Engine, appName string, relayService ytrelay.VideoRelay, whiteli
 			err = fmt.Errorf("playlistId(%s) is invalid", queries.PlaylistID)
 			apiLogger.Error(err)
 			resp := api.ErrorResp{Error: err.Error()}
-			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, resp)
+			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, http.StatusBadRequest, resp)
 			c.AbortWithStatusJSON(http.StatusBadRequest, resp)
 			return
 		}
@@ -238,7 +248,8 @@ func Set(r *gin.Engine, appName string, relayService ytrelay.VideoRelay, whiteli
 		if err != nil {
 			apiLogger.Error(err)
 			resp := api.ErrorResp{Error: err.Error()}
-			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, resp)
+			// FIXME internal error
+			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, http.StatusBadRequest, resp)
 			c.AbortWithStatusJSON(http.StatusBadRequest, resp)
 			return
 		}

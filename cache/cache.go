@@ -12,6 +12,11 @@ import (
 	"github.com/mirror-media/yt-relay/config"
 )
 
+type HTTP struct {
+	StatusCode int    `json:"code"`
+	Response   []byte `json:"response"`
+}
+
 type Rediser interface {
 	Set(ctx context.Context, key string, value interface{}, ttl time.Duration) *redis.StatusCmd
 	SetXX(ctx context.Context, key string, value interface{}, ttl time.Duration) *redis.BoolCmd

@@ -83,7 +83,7 @@ func saveCache(cacheConf config.Cache, cacheProvider cache.Rediser, apiLogger *l
 		apiLogger.Errorf("setting cache encountered error for %s: %v ", request.URL.String(), err)
 		return
 	} else {
-		apiLogger.Infof("cache for %s is set for ttl(%d) at %v", request.URL.String(), ttl, time.Now().UTC())
+		apiLogger.Infof("cache for %s is set for ttl(%d)", request.URL.String(), ttl)
 	}
 }
 

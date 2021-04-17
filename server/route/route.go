@@ -78,7 +78,7 @@ func saveCache(cacheConf config.Cache, cacheProvider cache.Rediser, apiLogger *l
 	if err != nil {
 		apiLogger.Errorf("GetCacheKey for %s encounter error:%v", request.URL.String(), err)
 	}
-	err = cacheProvider.Set(request.Context(), key, string(s), ttl).Err()
+	err = cacheProvider.SetNX(request.Context(), key, string(s), ttl).Err()
 	if err != nil {
 		apiLogger.Errorf("setting cache encountered error for %s: %v ", request.URL.String(), err)
 		return

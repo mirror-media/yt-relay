@@ -25,6 +25,7 @@ steps:
     when:
       branch:
         - dev
+        - stag
         - master
       event:
         - push
@@ -57,6 +58,7 @@ steps:
         from_secret: google_credentials
     when:
       branch:
+        - stag
         - master
       event:
         - push
@@ -74,6 +76,7 @@ steps:
     when:
       branch:
         - dev
+        - stag
         - master
       event:
         - push
@@ -116,6 +119,7 @@ steps:
         from_secret: google_credentials
     when:
       branch:
+        - stag
         - master
       event:
         - push
@@ -148,6 +152,7 @@ steps:
     when:
       branch:
         - dev
+        - stag
         - master
       event:
         - push

@@ -1,12 +1,17 @@
 package route
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	ytrelay "github.com/mirror-media/yt-relay"
 	"github.com/mirror-media/yt-relay/api"
+	"github.com/mirror-media/yt-relay/cache"
+	"github.com/mirror-media/yt-relay/config"
+	"github.com/mirror-media/yt-relay/middleware"
 	"github.com/mirror-media/yt-relay/relay"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -18,9 +23,73 @@ const (
 	ErrorEmptyID   = "id cannot be empty"
 )
 
+func getCacheTTL(cacheConf config.Cache, api string) (ttl time.Duration, isDisabled bool) {
+
+	isDisabled = cacheConf.DisabledAPIs[api]
+
+	seconds, ok := cacheConf.OverwriteTTL[api]
+	if ok {
+		ttl = time.Duration(seconds) * time.Second
+	} else {
+		ttl = time.Duration(cacheConf.TTL) * time.Second
+	}
+	return ttl, isDisabled
+}
+
+func saveOKCache(isEnabled bool, cacheConf config.Cache, cacheProvider cache.Rediser, apiLogger *log.Entry, appName string, request http.Request, resp interface{}) {
+
+	if cacheConf.IsEnabled {
+		ttl, isCacheDisabledForAPI := getCacheTTL(cacheConf, request.RequestURI)
+		if !isCacheDisabledForAPI {
+			saveCache(cacheConf, cacheProvider, apiLogger, appName, request, http.StatusOK, resp, ttl)
+		} else {
+			apiLogger.Infof("cache is disabled for %s", request.URL.String())
+		}
+	}
+}
+func saveErrCache(isEnabled bool, cacheConf config.Cache, cacheProvider cache.Rediser, apiLogger *log.Entry, appName string, request http.Request, httpResponseCode uint, resp interface{}) {
+
+	if cacheConf.IsEnabled {
+		_, isCacheDisabledForAPI := getCacheTTL(cacheConf, request.RequestURI)
+		if !isCacheDisabledForAPI {
+			ttl := time.Duration(cacheConf.ErrorTTL) * time.Second
+			saveCache(cacheConf, cacheProvider, apiLogger, appName, request, http.StatusOK, resp, ttl)
+		} else {
+			apiLogger.Infof("cache is disabled for %s", request.URL.String())
+		}
+	}
+}
+
+func saveCache(cacheConf config.Cache, cacheProvider cache.Rediser, apiLogger *log.Entry, appName string, request http.Request, respCode int, resp interface{}, ttl time.Duration) {
+	s, err := json.Marshal(resp)
+	if err != nil {
+		apiLogger.Errorf("Cannot marshal resp for %s: %s", request.URL.String(), err)
+		return
+	}
+	s, err = json.Marshal(cache.HTTP{
+		StatusCode: respCode,
+		Response:   s,
+	})
+	if err != nil {
+		apiLogger.Errorf("Cannot marshal http resp cache for %s: %s", request.URL.String(), err)
+		return
+	}
+	key, err := cache.GetCacheKey(appName, request.URL.String())
+	if err != nil {
+		apiLogger.Errorf("GetCacheKey for %s encounter error:%v", request.URL.String(), err)
+	}
+	err = cacheProvider.SetNX(request.Context(), key, string(s), ttl).Err()
+	if err != nil {
+		apiLogger.Errorf("setting cache encountered error for %s: %v ", request.URL.String(), err)
+		return
+	} else {
+		apiLogger.Infof("cache for %s is set for ttl(%d)", request.URL.String(), ttl)
+	}
+}
+
 // Set sets the routing for the gin engine
 // TODO move whitelist to YouTube relay service
-func Set(r *gin.Engine, relayService ytrelay.VideoRelay, whitelist ytrelay.APIWhitelist) error {
+func Set(r *gin.Engine, appName string, relayService ytrelay.VideoRelay, whitelist ytrelay.APIWhitelist, cacheConf config.Cache, cacheProvider cache.Rediser) error {
 
 	// health check api
 	// As more resources and component are used, they should be checked in the api
@@ -29,6 +98,10 @@ func Set(r *gin.Engine, relayService ytrelay.VideoRelay, whitelist ytrelay.APIWh
 	})
 
 	ytRouter := r.Group("/youtube/v3")
+
+	if cacheConf.IsEnabled {
+		ytRouter.Use(middleware.Cache(appName, cacheConf, cacheProvider))
+	}
 
 	// search videos. ChannelID is required
 	ytRouter.GET("/search", func(c *gin.Context) {
@@ -40,14 +113,18 @@ func Set(r *gin.Engine, relayService ytrelay.VideoRelay, whitelist ytrelay.APIWh
 		queries, err := parseQueries(c)
 		if err != nil {
 			apiLogger.Error(err)
-			c.AbortWithStatusJSON(http.StatusBadRequest, api.ErrorResp{Error: err.Error()})
+			resp := api.ErrorResp{Error: err.Error()}
+			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, http.StatusBadRequest, resp)
+			c.AbortWithStatusJSON(http.StatusBadRequest, resp)
 			return
 		}
 
 		// Check the mandatory parameters
 		if queries.Part == "" {
 			apiLogger.Error(ErrorEmptyPart)
-			c.AbortWithStatusJSON(http.StatusBadRequest, api.ErrorResp{Error: ErrorEmptyPart})
+			resp := api.ErrorResp{Error: ErrorEmptyPart}
+			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, http.StatusBadRequest, resp)
+			c.AbortWithStatusJSON(http.StatusBadRequest, resp)
 			return
 		}
 
@@ -55,16 +132,21 @@ func Set(r *gin.Engine, relayService ytrelay.VideoRelay, whitelist ytrelay.APIWh
 		if !whitelist.ValidateChannelID(queries.ChannelID) {
 			err = fmt.Errorf("channelId(%s) is invalid", queries.ChannelID)
 			apiLogger.Error(err)
-			c.AbortWithStatusJSON(http.StatusBadRequest, api.ErrorResp{Error: err.Error()})
+			resp := api.ErrorResp{Error: err.Error()}
+			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, http.StatusBadRequest, resp)
+			c.AbortWithStatusJSON(http.StatusBadRequest, resp)
 			return
 		}
 
 		resp, err := relayService.Search(queries)
 		if err != nil {
 			apiLogger.Error(err)
-			c.AbortWithStatusJSON(http.StatusBadRequest, api.ErrorResp{Error: err.Error()})
+			resp := api.ErrorResp{Error: err.Error()}
+			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, http.StatusInternalServerError, resp)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, api.ErrorResp{Error: err.Error()})
 			return
 		}
+		saveOKCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, resp)
 		c.JSON(http.StatusOK, resp)
 	})
 
@@ -86,19 +168,25 @@ func Set(r *gin.Engine, relayService ytrelay.VideoRelay, whitelist ytrelay.APIWh
 		// Check the mandatory parameters
 		if queries.Part == "" {
 			apiLogger.Error(ErrorEmptyPart)
-			c.AbortWithStatusJSON(http.StatusBadRequest, api.ErrorResp{Error: ErrorEmptyPart})
+			resp := api.ErrorResp{Error: ErrorEmptyPart}
+			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, http.StatusBadRequest, resp)
+			c.AbortWithStatusJSON(http.StatusBadRequest, resp)
 			return
 		}
 		if queries.IDs == "" {
 			apiLogger.Error(ErrorEmptyID)
-			c.AbortWithStatusJSON(http.StatusBadRequest, api.ErrorResp{Error: ErrorEmptyID})
+			resp := api.ErrorResp{Error: ErrorEmptyID}
+			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, http.StatusBadRequest, resp)
+			c.AbortWithStatusJSON(http.StatusBadRequest, resp)
 			return
 		}
 
 		resp, err := relayService.ListByVideoIDs(queries)
 		if err != nil {
 			apiLogger.Error(err)
-			c.AbortWithStatusJSON(http.StatusBadRequest, api.ErrorResp{Error: err.Error()})
+			resp := api.ErrorResp{Error: err.Error()}
+			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, http.StatusInternalServerError, resp)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, resp)
 			return
 		}
 
@@ -108,11 +196,14 @@ func Set(r *gin.Engine, relayService ytrelay.VideoRelay, whitelist ytrelay.APIWh
 			if err = validateYouTubeVideoListResponse(whitelist, resp); err != nil {
 				err = errors.Wrap(err, "some video's channel id is invalid")
 				apiLogger.Error(err)
-				c.AbortWithStatusJSON(http.StatusBadRequest, api.ErrorResp{Error: err.Error()})
+				resp := api.ErrorResp{Error: err.Error()}
+				saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, http.StatusBadRequest, resp)
+				c.AbortWithStatusJSON(http.StatusBadRequest, resp)
 				return
 			}
 		}
 
+		saveOKCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, resp)
 		c.JSON(http.StatusOK, resp)
 	})
 
@@ -126,14 +217,18 @@ func Set(r *gin.Engine, relayService ytrelay.VideoRelay, whitelist ytrelay.APIWh
 		queries, err := parseQueries(c)
 		if err != nil {
 			apiLogger.Error(err)
-			c.AbortWithStatusJSON(http.StatusBadRequest, api.ErrorResp{Error: err.Error()})
+			resp := api.ErrorResp{Error: err.Error()}
+			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, http.StatusBadRequest, resp)
+			c.AbortWithStatusJSON(http.StatusBadRequest, resp)
 			return
 		}
 
 		// Check the mandatory parameters
 		if queries.Part == "" {
 			apiLogger.Error(ErrorEmptyPart)
-			c.AbortWithStatusJSON(http.StatusBadRequest, api.ErrorResp{Error: ErrorEmptyPart})
+			resp := api.ErrorResp{Error: ErrorEmptyPart}
+			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, http.StatusBadRequest, resp)
+			c.AbortWithStatusJSON(http.StatusBadRequest, resp)
 			return
 		}
 
@@ -141,17 +236,22 @@ func Set(r *gin.Engine, relayService ytrelay.VideoRelay, whitelist ytrelay.APIWh
 		if !whitelist.ValidatePlaylistIDs(queries.PlaylistID) {
 			err = fmt.Errorf("playlistId(%s) is invalid", queries.PlaylistID)
 			apiLogger.Error(err)
-			c.AbortWithStatusJSON(http.StatusBadRequest, api.ErrorResp{Error: err.Error()})
+			resp := api.ErrorResp{Error: err.Error()}
+			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, http.StatusBadRequest, resp)
+			c.AbortWithStatusJSON(http.StatusBadRequest, resp)
 			return
 		}
 
 		resp, err := relayService.ListPlaylistVideos(queries)
 		if err != nil {
 			apiLogger.Error(err)
-			c.AbortWithStatusJSON(http.StatusBadRequest, api.ErrorResp{Error: err.Error()})
+			resp := api.ErrorResp{Error: err.Error()}
+			saveErrCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, http.StatusInternalServerError, resp)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, resp)
 			return
 		}
 
+		saveOKCache(cacheConf.IsEnabled, cacheConf, cacheProvider, apiLogger, appName, *c.Request, resp)
 		c.JSON(http.StatusOK, resp)
 	})
 

@@ -1,13 +1,23 @@
 {
+  # Required
   "apiKey": "", # apikey from YouTube
-  "whitelists": { # specifies the whitelists
-    "channelIDs": { # only allows videos in these channel in search api and video api
-      "channelID1": true,
-      "channelID2": false, # key is the whitelisted channelID. However the value represents the effectiveness it. "channelID2" won't be effective and whitelisted as its value is false.
-    }, 
-    "playlistIDs": { # only allows videos in these playlist in playlistIem api
-      "playlistID1": true,
-      "playlistID2": false,
+  # Required
+  ? "whitelists" # specifies the whitelists
+  : {
+      ? "channelIDs" # only allows videos in these channel in search api and video api
+      : {
+          # Optional
+          "channelID1": true,
+          # Optional
+          "channelID2": false, # key is the whitelisted channelID. However the value represents the effectiveness it. "channelID2" won't be effective and whitelisted as its value is false.
+        },
+      # Required
+      ? "playlistIDs" # only allows videos in these playlist in playlistIem api
+      : {
+          # Optional
+          "playlistID1": true,
+          # Optional
+          "playlistID2": false,
+        },
     },
-  },
 }

@@ -38,6 +38,7 @@ steps:
       - gcloud source repos clone configs dockerignore/gcr_configs
       - mkdir configs
       - ln -s ./build/ci/mtv/dev/Dockerfile ./Dockerfile
+      - cp ./dockerignore/gcr_configs/yt-relay/dev/config.yml ./configs/config.yml
       - cp ./dockerignore/gcr_configs/yt-relay/dev/.kube.yml ./.kube.yml
     environment:
       GOOGLE_CREDENTIALS:

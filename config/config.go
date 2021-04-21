@@ -88,32 +88,39 @@ func (c *Conf) Valid() bool {
 
 	isValidAppName, _ := regexp.MatchString("^[a-zA-Z0-9.-]+$", c.AppName)
 	if !isValidAppName {
+		log.Errorf("appName(%s) can only contains alphanumeric, dot, and hyphen are allowed, and it cannot be empty", c.AppName)
 		return false
 	}
 
 	if c.ApiKey == "" {
+		log.Error("apiKey cannot be empty")
 		return false
 	}
 
 	if len(c.Whitelists.ChannelIDs) == 0 {
+		log.Error("whitelist's channel id cannot be empty")
 		return false
 	}
 
 	if len(c.Whitelists.PlaylistIDs) == 0 {
+		log.Error("whitelist's playlist id cannot be empty")
 		return false
 	}
 
 	if c.Cache.IsEnabled {
 		if c.Cache.TTL <= 0 {
+			log.Errorf("enabled cache's default ttl(%d) cannot be zero or negative", c.Cache.TTL)
 			return false
 		}
 
 		if c.Cache.ErrorTTL <= 0 {
+			log.Errorf("enabled cache's default error ttl(%d) cannot be zero or negative", c.Cache.ErrorTTL)
 			return false
 		}
 
-		for _, ttl := range c.Cache.OverwriteTTL {
+		for api, ttl := range c.Cache.OverwriteTTL {
 			if ttl <= 0 {
+				log.Errorf("enabled cache's ttl(%d) fot api(%s) cannot be zero or negative", ttl, api)
 				return false
 			}
 		}
@@ -124,69 +131,83 @@ func (c *Conf) Valid() bool {
 		switch redis.Type {
 		case Cluster:
 			if redis.Cluster == nil {
+				log.Error("redis type is set to %s but there is no %s configuration", Cluster, Cluster)
 				return false
 			}
 
 			cluster := redis.Cluster
 
 			if len(cluster.Addrs) == 0 {
+				log.Errorf("%s addresses cannot be empty", Cluster)
 				return false
 			}
 			for _, addr := range cluster.Addrs {
 				if len(addr.Addr) == 0 {
+					log.Errorf("one of the %s addresses is empty", Cluster)
 					return false
 				}
 			}
 		case Single:
 			if redis.SingleInstance == nil {
+				log.Error("redis type is set to %s but there is no %s configuration", Single, Single)
 				return false
 			}
 
 			single := redis.SingleInstance
 
 			if single.Instance.Addr == "" {
+				log.Errorf("%s address cannot be empty", Single)
 				return false
 			}
 		case Sentinel:
 			if redis.Sentinel == nil {
+				log.Error("redis type is set to %s but there is no %s configuration", Sentinel, Sentinel)
 				return false
 			}
 
 			sentinel := redis.Sentinel
 
 			if len(sentinel.Addrs) == 0 {
+				log.Errorf("%s addresses cannot be empty", Sentinel)
 				return false
 			}
 			for _, addr := range sentinel.Addrs {
 				if len(addr.Addr) == 0 {
+					log.Errorf("one of the %s addresses is empty", Sentinel)
 					return false
 				}
 			}
 		case Replica:
 			if redis.Replica == nil {
+				log.Error("redis type is set to %s but there is no %s configuration", Replica, Replica)
 				return false
 			}
 
 			replica := redis.Replica
 
 			if len(replica.MasterAddrs) == 0 {
+				log.Errorf("%s writer addresses cannot be empty", Replica)
 				return false
 			}
 			for _, addr := range replica.MasterAddrs {
 				if len(addr.Addr) == 0 {
+					log.Errorf("one of the %s writer addresses is empty", Replica)
 					return false
 				}
 			}
 
 			if len(replica.SlaveAddrs) == 0 {
+				log.Errorf("%s reader addresses cannot be empty", Replica)
 				return false
 			}
 			for _, addr := range replica.SlaveAddrs {
 				if len(addr.Addr) == 0 {
+					log.Errorf("one of the %s reader addresses is empty", Replica)
 					return false
 				}
 			}
 		default:
+			log.Errorf("redis type(%s) is not supported", redis.Type)
 			return false
 		}
 	}

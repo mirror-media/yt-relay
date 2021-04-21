@@ -36,7 +36,6 @@ steps:
     image: gcr.io/mirror-tv-275709/drone-cloud-sdk:mirror-tv
     commands:
       - gcloud source repos clone configs dockerignore/gcr_configs
-      - mkdir configs
       - ln -s ./build/ci/mtv/dev/Dockerfile ./Dockerfile
       - cp ./dockerignore/gcr_configs/yt-relay/dev/config.yml ./configs/config.yml
       - cp ./dockerignore/gcr_configs/yt-relay/dev/.kube.yml ./.kube.yml
@@ -54,7 +53,6 @@ steps:
     image: gcr.io/mirror-tv-275709/drone-cloud-sdk:mirror-tv
     commands:
       - gcloud source repos clone configs dockerignore/gcr_configs
-      - mkdir configs
       - ln -s ./build/ci/mtv/staging/Dockerfile ./Dockerfile
       - cp ./dockerignore/gcr_configs/yt-relay/staging/.kube.yml ./.kube.yml
     environment:

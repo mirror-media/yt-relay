@@ -103,6 +103,22 @@ func (c *Conf) Valid() bool {
 		return false
 	}
 
+	if c.Cache.IsEnabled {
+		if c.Cache.TTL <= 0 {
+			return false
+		}
+
+		if c.Cache.ErrorTTL <= 0 {
+			return false
+		}
+
+		for _, ttl := range c.Cache.OverwriteTTL {
+			if ttl <= 0 {
+				return false
+			}
+		}
+	}
+
 	if c.Redis != nil {
 		redis := c.Redis
 		switch redis.Type {
@@ -115,6 +131,11 @@ func (c *Conf) Valid() bool {
 
 			if len(cluster.Addrs) == 0 {
 				return false
+			}
+			for _, addr := range cluster.Addrs {
+				if len(addr.Addr) == 0 {
+					return false
+				}
 			}
 		case Single:
 			if redis.SingleInstance == nil {
@@ -136,6 +157,11 @@ func (c *Conf) Valid() bool {
 			if len(sentinel.Addrs) == 0 {
 				return false
 			}
+			for _, addr := range sentinel.Addrs {
+				if len(addr.Addr) == 0 {
+					return false
+				}
+			}
 		case Replica:
 			if redis.Replica == nil {
 				return false
@@ -146,9 +172,19 @@ func (c *Conf) Valid() bool {
 			if len(replica.MasterAddrs) == 0 {
 				return false
 			}
+			for _, addr := range replica.MasterAddrs {
+				if len(addr.Addr) == 0 {
+					return false
+				}
+			}
 
 			if len(replica.SlaveAddrs) == 0 {
 				return false
+			}
+			for _, addr := range replica.SlaveAddrs {
+				if len(addr.Addr) == 0 {
+					return false
+				}
 			}
 		default:
 			return false

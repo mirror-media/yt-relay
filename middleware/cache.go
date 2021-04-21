@@ -18,7 +18,7 @@ func Cache(namespace string, cacheConf config.Cache, cacheProvider cache.Rediser
 		url := c.Request.URL
 
 		// check blacklist
-		if _, ok := cacheConf.DisabledAPIs[url.Path]; ok {
+		if isDisabled := cacheConf.DisabledAPIs[url.Path]; isDisabled {
 			log.Infof("cache is disabled for %s", url.Path)
 			c.Next()
 			return

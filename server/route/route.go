@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -23,23 +24,37 @@ const (
 	ErrorEmptyID   = "id cannot be empty"
 )
 
-func getCacheTTL(cacheConf config.Cache, api string) (ttl time.Duration, isDisabled bool) {
+const TTLHeader = "Cache-Set-TTL"
 
-	isDisabled = cacheConf.DisabledAPIs[api]
+func getResponseCacheTTL(apiLogger *log.Entry, cacheConf config.Cache, request http.Request) (ttl time.Duration, isDisabled bool) {
 
-	seconds, ok := cacheConf.OverwriteTTL[api]
+	seconds, ok := cacheConf.OverwriteTTL[request.RequestURI]
 	if ok {
 		ttl = time.Duration(seconds) * time.Second
 	} else {
 		ttl = time.Duration(cacheConf.TTL) * time.Second
 	}
-	return ttl, isDisabled
+
+	if headerTTL := request.URL.Query().Get(TTLHeader); headerTTL != "" {
+		intTTL, err := strconv.Atoi(headerTTL)
+		if err != nil {
+			err = errors.Wrap(err, fmt.Sprintf("converting %s(%s) to int encountered error", headerTTL, TTLHeader))
+			apiLogger.Error(err)
+		} else if intTTL <= 0 {
+			apiLogger.Errorf("the value(%d) of %s is not positive", intTTL, headerTTL)
+		} else {
+			apiLogger.Infof("client requests to set cache ttl to %d via %s", intTTL, headerTTL)
+			ttl = time.Duration(intTTL) * time.Second
+		}
+	}
+
+	return ttl, cacheConf.DisabledAPIs[request.RequestURI]
 }
 
 func saveOKCache(isEnabled bool, cacheConf config.Cache, cacheProvider cache.Rediser, apiLogger *log.Entry, appName string, request http.Request, resp interface{}) {
 
 	if cacheConf.IsEnabled {
-		ttl, isCacheDisabledForAPI := getCacheTTL(cacheConf, request.RequestURI)
+		ttl, isCacheDisabledForAPI := getResponseCacheTTL(apiLogger, cacheConf, request)
 		if !isCacheDisabledForAPI {
 			saveCache(cacheConf, cacheProvider, apiLogger, appName, request, http.StatusOK, resp, ttl)
 		} else {
@@ -50,7 +65,7 @@ func saveOKCache(isEnabled bool, cacheConf config.Cache, cacheProvider cache.Red
 func saveErrCache(isEnabled bool, cacheConf config.Cache, cacheProvider cache.Rediser, apiLogger *log.Entry, appName string, request http.Request, httpResponseCode uint, resp interface{}) {
 
 	if cacheConf.IsEnabled {
-		_, isCacheDisabledForAPI := getCacheTTL(cacheConf, request.RequestURI)
+		_, isCacheDisabledForAPI := getResponseCacheTTL(apiLogger, cacheConf, request)
 		if !isCacheDisabledForAPI {
 			ttl := time.Duration(cacheConf.ErrorTTL) * time.Second
 			saveCache(cacheConf, cacheProvider, apiLogger, appName, request, http.StatusOK, resp, ttl)

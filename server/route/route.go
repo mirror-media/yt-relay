@@ -35,20 +35,39 @@ func getResponseCacheTTL(apiLogger *log.Entry, cacheConf config.Cache, request h
 		ttl = time.Duration(cacheConf.TTL) * time.Second
 	}
 
-	if headerTTL := request.URL.Query().Get(TTLHeader); headerTTL != "" {
-		intTTL, err := strconv.Atoi(headerTTL)
-		if err != nil {
-			err = errors.Wrap(err, fmt.Sprintf("converting %s(%s) to int encountered error", headerTTL, TTLHeader))
-			apiLogger.Error(err)
-		} else if intTTL <= 0 {
-			apiLogger.Errorf("the value(%d) of %s is not positive", intTTL, headerTTL)
-		} else {
-			apiLogger.Infof("client requests to set cache ttl to %d via %s", intTTL, headerTTL)
-			ttl = time.Duration(intTTL) * time.Second
+	if headerTTL, isPresenting, err := getHeaderTTL(apiLogger, request); err != nil {
+		if isPresenting {
+			ttl = headerTTL
 		}
+	} else {
+		apiLogger.Error(err)
 	}
 
 	return ttl, cacheConf.DisabledAPIs[request.RequestURI]
+}
+
+func getHeaderTTL(apiLogger *log.Entry, request http.Request) (ttl time.Duration, isPresenting bool, err error) {
+	var values []string
+	if values, isPresenting = request.Header[http.CanonicalHeaderKey(TTLHeader)]; isPresenting {
+		var headerTTL string
+		if len(values) > 0 {
+			headerTTL = values[0]
+		} else {
+			return ttl, isPresenting, errors.Errorf("header(%s) has empty value", TTLHeader)
+		}
+
+		var intTTL int
+		intTTL, err = strconv.Atoi(headerTTL)
+		if err != nil {
+			err = errors.Wrap(err, fmt.Sprintf("converting %s(%s) to int encountered error", headerTTL, TTLHeader))
+		} else if intTTL <= 0 {
+			err = errors.Errorf("the value(%d) of %s is not positive", intTTL, TTLHeader)
+		} else {
+			apiLogger.Infof("client requests to set cache ttl to %d via %s", intTTL, TTLHeader)
+			ttl = time.Duration(intTTL) * time.Second
+		}
+	}
+	return ttl, isPresenting, err
 }
 
 func saveOKCache(isEnabled bool, cacheConf config.Cache, cacheProvider cache.Rediser, apiLogger *log.Entry, appName string, request http.Request, resp interface{}) {

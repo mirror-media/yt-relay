@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -23,23 +24,56 @@ const (
 	ErrorEmptyID   = "id cannot be empty"
 )
 
-func getCacheTTL(cacheConf config.Cache, api string) (ttl time.Duration, isDisabled bool) {
+const TTLHeader = "Cache-Set-TTL"
 
-	isDisabled = cacheConf.DisabledAPIs[api]
+func getResponseCacheTTL(apiLogger *log.Entry, cacheConf config.Cache, request http.Request) (ttl time.Duration, isDisabled bool) {
 
-	seconds, ok := cacheConf.OverwriteTTL[api]
+	seconds, ok := cacheConf.OverwriteTTL[request.RequestURI]
 	if ok {
 		ttl = time.Duration(seconds) * time.Second
 	} else {
 		ttl = time.Duration(cacheConf.TTL) * time.Second
 	}
-	return ttl, isDisabled
+
+	if headerTTL, isPresenting, err := getHeaderTTL(apiLogger, request); err != nil {
+		if isPresenting {
+			ttl = headerTTL
+		}
+	} else {
+		apiLogger.Error(err)
+	}
+
+	return ttl, cacheConf.DisabledAPIs[request.RequestURI]
+}
+
+func getHeaderTTL(apiLogger *log.Entry, request http.Request) (ttl time.Duration, isPresenting bool, err error) {
+	var values []string
+	if values, isPresenting = request.Header[http.CanonicalHeaderKey(TTLHeader)]; isPresenting {
+		var headerTTL string
+		if len(values) > 0 {
+			headerTTL = values[0]
+		} else {
+			return ttl, isPresenting, errors.Errorf("header(%s) has empty value", TTLHeader)
+		}
+
+		var intTTL int
+		intTTL, err = strconv.Atoi(headerTTL)
+		if err != nil {
+			err = errors.Wrap(err, fmt.Sprintf("converting %s(%s) to int encountered error", headerTTL, TTLHeader))
+		} else if intTTL <= 0 {
+			err = errors.Errorf("the value(%d) of %s is not positive", intTTL, TTLHeader)
+		} else {
+			apiLogger.Infof("client requests to set cache ttl to %d via %s", intTTL, TTLHeader)
+			ttl = time.Duration(intTTL) * time.Second
+		}
+	}
+	return ttl, isPresenting, err
 }
 
 func saveOKCache(isEnabled bool, cacheConf config.Cache, cacheProvider cache.Rediser, apiLogger *log.Entry, appName string, request http.Request, resp interface{}) {
 
 	if cacheConf.IsEnabled {
-		ttl, isCacheDisabledForAPI := getCacheTTL(cacheConf, request.RequestURI)
+		ttl, isCacheDisabledForAPI := getResponseCacheTTL(apiLogger, cacheConf, request)
 		if !isCacheDisabledForAPI {
 			saveCache(cacheConf, cacheProvider, apiLogger, appName, request, http.StatusOK, resp, ttl)
 		} else {
@@ -50,7 +84,7 @@ func saveOKCache(isEnabled bool, cacheConf config.Cache, cacheProvider cache.Red
 func saveErrCache(isEnabled bool, cacheConf config.Cache, cacheProvider cache.Rediser, apiLogger *log.Entry, appName string, request http.Request, httpResponseCode uint, resp interface{}) {
 
 	if cacheConf.IsEnabled {
-		_, isCacheDisabledForAPI := getCacheTTL(cacheConf, request.RequestURI)
+		_, isCacheDisabledForAPI := getResponseCacheTTL(apiLogger, cacheConf, request)
 		if !isCacheDisabledForAPI {
 			ttl := time.Duration(cacheConf.ErrorTTL) * time.Second
 			saveCache(cacheConf, cacheProvider, apiLogger, appName, request, http.StatusOK, resp, ttl)
@@ -83,7 +117,7 @@ func saveCache(cacheConf config.Cache, cacheProvider cache.Rediser, apiLogger *l
 		apiLogger.Errorf("setting cache encountered error for %s: %v ", request.URL.String(), err)
 		return
 	} else {
-		apiLogger.Infof("cache for %s is set for ttl(%d)", request.URL.String(), ttl)
+		apiLogger.Infof("cache for %s is set for ttl(%d)", request.URL.String(), int(ttl.Seconds()))
 	}
 }
 

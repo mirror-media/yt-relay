@@ -36,8 +36,8 @@ steps:
     image: gcr.io/mirror-tv-275709/drone-cloud-sdk:mirror-tv
     commands:
       - gcloud source repos clone configs dockerignore/gcr_configs
-      - mkdir configs
       - ln -s ./build/ci/mtv/dev/Dockerfile ./Dockerfile
+      - cp ./dockerignore/gcr_configs/yt-relay/dev/config.yml ./configs/config.yml
       - cp ./dockerignore/gcr_configs/yt-relay/dev/.kube.yml ./.kube.yml
     environment:
       GOOGLE_CREDENTIALS:
@@ -53,7 +53,6 @@ steps:
     image: gcr.io/mirror-tv-275709/drone-cloud-sdk:mirror-tv
     commands:
       - gcloud source repos clone configs dockerignore/gcr_configs
-      - mkdir configs
       - ln -s ./build/ci/mtv/staging/Dockerfile ./Dockerfile
       - cp ./dockerignore/gcr_configs/yt-relay/staging/.kube.yml ./.kube.yml
     environment:
@@ -84,48 +83,48 @@ steps:
       event:
         - push
 
-  - name: deployDev
-    pull: if-not-exists
-    image: nytimes/drone-gke
-    settings:
-      cluster: tv-dev
-      namespace: default
-      vars:
-        app: ${DRONE_REPO_NAME}
-        image: gcr.io/mirror-tv-275709/${DRONE_REPO_NAME}:${DRONE_BRANCH}_${DRONE_COMMIT_AUTHOR}_${DRONE_BUILD_NUMBER}
-        tier: backend
-      verbose: true
-      zone: asia-east1-c
-    environment:
-      TOKEN:
-        from_secret: google_credentials
-    when:
-      branch:
-        - dev
-      event:
-        - push
+  #  - name: deployDev
+  #    pull: if-not-exists
+  #    image: nytimes/drone-gke
+  #    settings:
+  #      cluster: tv-dev
+  #      namespace: default
+  #      vars:
+  #        app: ${DRONE_REPO_NAME}
+  #        image: gcr.io/mirror-tv-275709/${DRONE_REPO_NAME}:${DRONE_BRANCH}_${DRONE_COMMIT_AUTHOR}_${DRONE_BUILD_NUMBER}
+  #        tier: backend
+  #      verbose: true
+  #      zone: asia-east1-c
+  #    environment:
+  #      TOKEN:
+  #        from_secret: google_credentials
+  #    when:
+  #      branch:
+  #        - dev
+  #      event:
+  #        - push
 
-  - name: deployStaging
-    pull: if-not-exists
-    image: nytimes/drone-gke
-    settings:
-      cluster: tv-stag
-      namespace: default
-      vars:
-        app: ${DRONE_REPO_NAME}
-        image: gcr.io/mirror-tv-275709/${DRONE_REPO_NAME}:${DRONE_BRANCH}_${DRONE_COMMIT_AUTHOR}_${DRONE_BUILD_NUMBER}
-        tier: backend
-      verbose: true
-      zone: asia-east1-c
-    environment:
-      TOKEN:
-        from_secret: google_credentials
-    when:
-      branch:
-        - stag
-        - master
-      event:
-        - push
+  #  - name: deployStaging
+  #    pull: if-not-exists
+  #    image: nytimes/drone-gke
+  #    settings:
+  #      cluster: tv-stag
+  #      namespace: default
+  #      vars:
+  #        app: ${DRONE_REPO_NAME}
+  #        image: gcr.io/mirror-tv-275709/${DRONE_REPO_NAME}:${DRONE_BRANCH}_${DRONE_COMMIT_AUTHOR}_${DRONE_BUILD_NUMBER}
+  #        tier: backend
+  #      verbose: true
+  #      zone: asia-east1-c
+  #    environment:
+  #      TOKEN:
+  #        from_secret: google_credentials
+  #    when:
+  #      branch:
+  #        - stag
+  #        - master
+  #      event:
+  #        - push
 
   - name: sendWebhookKeel
     pull: if-not-exists
@@ -150,7 +149,6 @@ steps:
       template: >
         {{#success build.status}}
           *success* ${DRONE_REPO_NAME}:${DRONE_BRANCH}_${DRONE_COMMIT_AUTHOR}_${DRONE_BUILD_NUMBER} was well served.
-          Check out our new <http://cms-dev.mnews.tw/admin|TVStone>.
         {{else}}
           Houston, we have a problem. Build <${DRONE_BUILD_LINK}|#{{build.number}}> failed.
         {{/success}}

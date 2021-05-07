@@ -19,7 +19,6 @@ pipeline:
     secrets: [google_credentials]
     commands:
       - gcloud source repos clone configs dockerignore/gcr_configs
-      - mkdir configs
       - ln -s ./build/ci/mm/dev/Dockerfile ./Dockerfile
       - cp ./dockerignore/gcr_configs/mirror-media/yt-relay/dev/config.yml ./configs/config.yml
       - cp ./dockerignore/gcr_configs/mirror-media/yt-relay/dev/.kube.yml ./.kube.yml
@@ -55,18 +54,18 @@ pipeline:
       event: [push]
       branch: [dev]
 
-#  FIXME: when mm keel ready
-#    - fix gcr path
-#    - fix keel url
-#  sendWebhookKeel:
-#    image: curlimages/curl:7.75.0
-#    commands:
-#      - curl --request POST
-#        --data "{\"name\":\"gcr.io/mirror-tv-275709/${DRONE_REPO_NAME}\",\"tag\":\"${DRONE_BRANCH}_${DRONE_COMMIT_AUTHOR}_${DRONE_BUILD_NUMBER}\"}"
-#        https://keel-${DRONE_BRANCH}.mnews.tw/v1/webhooks/native
-#    when:
-#      event: [push]
-#      branch: [dev, stag]
+  #  FIXME: when mm keel ready
+  #    - fix gcr path
+  #    - fix keel url
+  #  sendWebhookKeel:
+  #    image: curlimages/curl:7.75.0
+  #    commands:
+  #      - curl --request POST
+  #        --data "{\"name\":\"gcr.io/mirror-tv-275709/${DRONE_REPO_NAME}\",\"tag\":\"${DRONE_BRANCH}_${DRONE_COMMIT_AUTHOR}_${DRONE_BUILD_NUMBER}\"}"
+  #        https://keel-${DRONE_BRANCH}.mnews.tw/v1/webhooks/native
+  #    when:
+  #      event: [push]
+  #      branch: [dev, stag]
 
   finishSlack:
     image: plugins/slack

@@ -18,6 +18,12 @@ type replicaTypeRedis struct {
 	readers    []*redis.Client
 }
 
+func (r *replicaTypeRedis) TTL(ctx context.Context, key string) *redis.DurationCmd {
+	wc := atomic.AddUint32(&r.writeCount, 1)
+	i := int(wc) % len(r.writers)
+	return r.writers[i].TTL(ctx, key, value, ttl)
+}
+
 func (r *replicaTypeRedis) Set(ctx context.Context, key string, value interface{}, ttl time.Duration) *redis.StatusCmd {
 	wc := atomic.AddUint32(&r.writeCount, 1)
 	i := int(wc) % len(r.writers)

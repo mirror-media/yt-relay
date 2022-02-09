@@ -32,6 +32,16 @@ func Cache(namespace string, cacheConf config.Cache, cacheProvider cache.Rediser
 			c.AbortWithStatusJSON(http.StatusInternalServerError, api.ErrorResp{Error: err.Error()})
 			return
 		}
+
+		ttl, err := cacheProvider.TTL(c.Request.Context(), key).Result()
+		if ttl < 0 {
+			err := cacheProvider.Del(c.Request.Context(), key)
+			if err != nil {
+				err = errors.Wrapf(err, "Fail to del cache key %s in cache middleware", key)
+				log.Info(err)
+			}
+		}
+
 		result, err := cacheProvider.Get(c.Request.Context(), key).Result()
 		if err != nil {
 			err = errors.Wrapf(err, "Fail to get cache value for %s in cache middleware", key)

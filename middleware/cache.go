@@ -33,16 +33,6 @@ func Cache(namespace string, cacheConf config.Cache, cacheProvider cache.Rediser
 			return
 		}
 
-		ttl, err := cacheProvider.TTL(c.Request.Context(), key).Result()
-		if ttl < 0 || err != nil {
-			log.Error("TTL ERROR")
-			err := cacheProvider.Del(c.Request.Context(), key)
-			if err != nil {
-				log.Error("DEL ERROR")
-				log.Error(err)
-			}
-		}
-
 		result, err := cacheProvider.Get(c.Request.Context(), key).Result()
 		if err != nil {
 			err = errors.Wrapf(err, "Fail to get cache value for %s in cache middleware", key)

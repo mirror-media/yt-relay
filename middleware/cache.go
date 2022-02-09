@@ -35,10 +35,11 @@ func Cache(namespace string, cacheConf config.Cache, cacheProvider cache.Rediser
 
 		ttl, err := cacheProvider.TTL(c.Request.Context(), key).Result()
 		if ttl < 0 || err != nil {
+			log.Error("TTL ERROR")
 			err := cacheProvider.Del(c.Request.Context(), key)
 			if err != nil {
-			//	err = errors.Wrapf(err, "Fail to del cache key %s in cache middleware", key)
-				log.Info("TTL ERROR")
+				err = errors.Wrapf(err, "Fail to del cache key %s in cache middleware", key)
+				log.Error("DEL ERROR")
 			}
 		}
 

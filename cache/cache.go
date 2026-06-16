@@ -18,6 +18,7 @@ type HTTP struct {
 }
 
 type Rediser interface {
+	TTL(ctx context.Context, key string) *redis.DurationCmd
 	Set(ctx context.Context, key string, value interface{}, ttl time.Duration) *redis.StatusCmd
 	SetXX(ctx context.Context, key string, value interface{}, ttl time.Duration) *redis.BoolCmd
 	SetNX(ctx context.Context, key string, value interface{}, ttl time.Duration) *redis.BoolCmd
